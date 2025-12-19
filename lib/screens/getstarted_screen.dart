@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 
+//
 class GetstartedScreen extends StatefulWidget {
   const GetstartedScreen({super.key});
 
