@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pet_adoption_app/bottom_navigation/bottomnavigation_screen.dart';
 
-class HomePageScreen extends StatelessWidget {
+class HomePageScreen extends ConsumerWidget {
   const HomePageScreen({super.key});
 
   static const Color _accent = Color(0xFFF67D2C);
@@ -15,7 +15,7 @@ class HomePageScreen extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F8),
       body: SafeArea(
@@ -55,14 +55,16 @@ class HomePageScreen extends StatelessWidget {
                       children: [
                         Text(
                           'Hi Sanjaya,',
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
+                            fontFamily: 'Aclonica',
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         Text(
                           'Kathmandu, Nepal',
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
+                            fontFamily: 'Aclonica',
                             fontSize: 12,
                             color: Colors.grey[700],
                           ),
@@ -90,7 +92,8 @@ class HomePageScreen extends StatelessWidget {
                       children: [
                         Text(
                           'Have you found your pet?',
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
+                            fontFamily: 'Aclonica',
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
                           ),
@@ -169,7 +172,7 @@ class HomePageScreen extends StatelessWidget {
   }
 }
 
-class _CategoryChip extends StatelessWidget {
+class _CategoryChip extends ConsumerWidget {
   final String label;
   final IconData icon;
   final bool active;
@@ -181,7 +184,7 @@ class _CategoryChip extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -207,7 +210,8 @@ class _CategoryChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: GoogleFonts.poppins(
+            style: TextStyle(
+              fontFamily: 'Aclonica',
               fontSize: 13,
               color: active ? const Color(0xFFF67D2C) : Colors.grey[800],
             ),
@@ -218,7 +222,7 @@ class _CategoryChip extends StatelessWidget {
   }
 }
 
-class _PetCard extends StatelessWidget {
+class _PetCard extends ConsumerWidget {
   final String name;
   final String meta;
   final String
@@ -231,7 +235,7 @@ class _PetCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onTap: () {},
       child: Container(
@@ -290,7 +294,8 @@ class _PetCard extends StatelessWidget {
                     children: [
                       Text(
                         name,
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
+                          fontFamily: 'Aclonica',
                           fontWeight: FontWeight.w700,
                           fontSize: 16,
                         ),
@@ -301,7 +306,8 @@ class _PetCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     meta,
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
+                      fontFamily: 'Aclonica',
                       fontSize: 12,
                       color: Colors.grey[600],
                     ),
