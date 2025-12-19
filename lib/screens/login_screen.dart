@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'registration_screen.dart';
 import 'homepage_screen.dart';
 
@@ -37,9 +36,10 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 8),
               Text(
                 'Log In',
-                style: GoogleFonts.afacad(
+                style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
+                  fontFamily: 'Afacad',
                 ),
               ),
               const SizedBox(height: 24),
@@ -72,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: () {},
                   child: Text(
                     'Forgot password?',
-                    style: GoogleFonts.afacad(color: Colors.grey),
+                    style: TextStyle(color: Colors.grey, fontFamily: 'Afacad'),
                   ),
                 ),
               ),
@@ -99,9 +99,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: Text(
                     'Log In',
-                    style: GoogleFonts.afacad(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
+                      fontFamily: 'Afacad',
                     ),
                   ),
                 ),
@@ -116,7 +117,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12.0),
                     child: Text(
                       'Or Log In With',
-                      style: GoogleFonts.afacad(color: Colors.grey),
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontFamily: 'Afacad',
+                      ),
                     ),
                   ),
                   Expanded(child: Divider(color: Colors.grey[300])),
@@ -136,9 +140,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   _socialCircle(
                     child: Text(
                       'G',
-                      style: GoogleFonts.afacad(
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
+                        fontFamily: 'Afacad',
                       ),
                     ),
                     onTap: () {},
@@ -158,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   Text(
                     "Don't you have an account? ",
-                    style: GoogleFonts.afacad(color: Colors.grey),
+                    style: TextStyle(color: Colors.grey, fontFamily: 'Afacad'),
                   ),
                   GestureDetector(
                     onTap: () {
@@ -170,7 +175,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     child: Text(
                       'Click here',
-                      style: GoogleFonts.afacad(color: const Color(0xFFD86C2B)),
+                      style: const TextStyle(
+                        color: Color(0xFFD86C2B),
+                        fontFamily: 'Afacad',
+                      ),
                     ),
                   ),
                 ],
@@ -194,10 +202,10 @@ class _LoginScreenState extends State<LoginScreen> {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      style: GoogleFonts.afacad(),
+      style: const TextStyle(fontFamily: 'Afacad'),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: GoogleFonts.afacad(color: Colors.grey.shade500),
+        hintStyle: TextStyle(color: Colors.grey.shade500, fontFamily: 'Afacad'),
         prefixIcon: prefix,
         suffixIcon: suffix,
         filled: true,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'registration_screen.dart';
 import 'login_screen.dart';
 
@@ -33,9 +32,10 @@ class GetStartedScreenState extends State<GetstartedScreen> {
                 child: Text(
                   'Welcome To PawBuddy',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.aclonica(
+                  style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
+                    fontFamily: 'Aclonica',
                   ),
                 ),
               ),
@@ -45,7 +45,7 @@ class GetStartedScreenState extends State<GetstartedScreen> {
                 child: Text(
                   'Let\'s find your dream pet and be a home for homeless pets.',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.afacad(fontSize: 18),
+                  style: const TextStyle(fontSize: 18, fontFamily: 'Afacad'),
                 ),
               ),
               const SizedBox(height: 35),
@@ -70,10 +70,11 @@ class GetStartedScreenState extends State<GetstartedScreen> {
                 ),
                 child: Text(
                   'Get Started',
-                  style: GoogleFonts.afacad(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
+                    fontFamily: 'Afacad',
                   ),
                 ),
               ),
@@ -83,9 +84,10 @@ class GetStartedScreenState extends State<GetstartedScreen> {
                 children: [
                   Text(
                     'Already have an account? ',
-                    style: GoogleFonts.afacad(
+                    style: const TextStyle(
                       color: Colors.black,
                       fontSize: 14,
+                      fontFamily: 'Afacad',
                     ),
                   ),
                   TextButton(
@@ -101,10 +103,11 @@ class GetStartedScreenState extends State<GetstartedScreen> {
                     ),
                     child: Text(
                       'Log in',
-                      style: GoogleFonts.afacad(
-                        color: const Color(0xFFD86C2B),
+                      style: const TextStyle(
+                        color: Color(0xFFD86C2B),
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
+                        fontFamily: 'Afacad',
                       ),
                     ),
                   ),

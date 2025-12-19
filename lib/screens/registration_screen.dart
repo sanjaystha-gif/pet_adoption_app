@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'login_screen.dart';
 
 class RegistrationScreen extends StatefulWidget {
@@ -119,7 +118,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   onPressed: () {},
                   child: Text(
                     'Forgot password?',
-                    style: GoogleFonts.afacad(color: Colors.redAccent),
+                    style: const TextStyle(
+                      color: Colors.redAccent,
+                      fontFamily: 'Afacad',
+                    ),
                   ),
                 ),
               ),
@@ -142,9 +144,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ),
                   child: Text(
                     'Create An Account',
-                    style: GoogleFonts.afacad(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
+                      fontFamily: 'Afacad',
                     ),
                   ),
                 ),
@@ -160,7 +163,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12.0),
                     child: Text(
                       'Or Sign Up With',
-                      style: GoogleFonts.afacad(color: Colors.grey),
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontFamily: 'Afacad',
+                      ),
                     ),
                   ),
                   Expanded(child: Divider(color: Colors.grey[300])),
@@ -181,9 +187,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   _socialCircle(
                     child: Text(
                       'G',
-                      style: GoogleFonts.afacad(
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
+                        fontFamily: 'Afacad',
                       ),
                     ),
                     onTap: () {},
@@ -204,7 +211,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 children: [
                   Text(
                     'Already have an account? ',
-                    style: GoogleFonts.afacad(color: Colors.grey),
+                    style: TextStyle(color: Colors.grey, fontFamily: 'Afacad'),
                   ),
                   GestureDetector(
                     onTap: () {
@@ -214,9 +221,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     },
                     child: Text(
                       'Log in',
-                      style: GoogleFonts.afacad(
+                      style: const TextStyle(
                         color: Color(0xFFD86C2B),
                         fontWeight: FontWeight.w600,
+                        fontFamily: 'Afacad',
                       ),
                     ),
                   ),
@@ -240,10 +248,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      style: GoogleFonts.afacad(),
+      style: const TextStyle(fontFamily: 'Afacad'),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: GoogleFonts.afacad(color: Colors.grey.shade500),
+        hintStyle: TextStyle(color: Colors.grey.shade500, fontFamily: 'Afacad'),
         filled: true,
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(
