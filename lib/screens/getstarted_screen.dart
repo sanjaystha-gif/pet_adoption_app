@@ -3,14 +3,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'registration_screen.dart';
 import 'login_screen.dart';
 
-class GetstartedScreen extends StatefulWidget {
-  const GetstartedScreen({Key? key}) : super(key: key);
+class GetStartedScreen extends StatefulWidget {
+  const GetStartedScreen({super.key});
 
   @override
-  _GetStartedScreenState createState() => _GetStartedScreenState();
+  GetStartedScreenState createState() => GetStartedScreenState();
 }
 
-class _GetStartedScreenState extends State<GetstartedScreen> {
+class GetStartedScreenState extends State<GetStartedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,18 +53,23 @@ class _GetStartedScreenState extends State<GetstartedScreen> {
                 onPressed: () {
                   // Navigate to RegistrationScreen when pressed
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const RegistrationScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const RegistrationScreen(),
+                    ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFF67D2C),
-                  padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 80,
+                    vertical: 16,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
                 child: Text(
-                  'Let\'s Started',
+                  'Get Started',
                   style: GoogleFonts.afacad(
                     color: Colors.white,
                     fontSize: 20,
@@ -85,7 +90,9 @@ class _GetStartedScreenState extends State<GetstartedScreen> {
                   ),
                   TextButton(
                     onPressed: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      );
                     },
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.zero,

@@ -4,20 +4,20 @@ import 'package:flutter/material.dart';
 import 'getstarted_screen.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
-  _SplashScreenState createState() => _SplashScreenState();
+  SplashScreenState createState() => SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
     // Wait 2.5 seconds then navigate to GetstartedScreen
     Timer(const Duration(milliseconds: 2500), () {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const GetstartedScreen()),
+        MaterialPageRoute(builder: (_) => const GetStartedScreen()),
       );
     });
   }
