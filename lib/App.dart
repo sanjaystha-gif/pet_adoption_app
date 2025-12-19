@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pet_adoption_app/screens/getstarted_screen.dart'; // Import the GetStartedScreen
 import 'package:pet_adoption_app/screens/splash_screen.dart';
 
 const String _appTitle = 'PawBuddy';
@@ -18,11 +17,7 @@ class MyApp extends ConsumerWidget {
         useMaterial3: true,
         fontFamily: 'Aclonica',
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const SplashScreen(),
-        '/getstarted': (context) => const GetstartedScreen(),
-      },
+      home: const SplashScreen(),
     );
   }
 }

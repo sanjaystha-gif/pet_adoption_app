@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'registration_screen.dart';
 import 'login_screen.dart';
 
 class GetstartedScreen extends StatefulWidget {
@@ -10,52 +9,119 @@ class GetstartedScreen extends StatefulWidget {
 }
 
 class GetStartedScreenState extends State<GetstartedScreen> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
+  final List<Map<String, String>> _onboardingData = [
+    {
+      'image': 'assets/images/main_logo.png',
+      'title': 'Welcome To PawBuddy',
+      'description':
+          'Let\'s find your dream pet and be a home for homeless pets.',
+    },
+    {
+      'image': 'assets/images/main_logo.png',
+      'title': 'Adopt Easily',
+      'description': 'Browse and adopt pets with ease from our platform.',
+    },
+    {
+      'image': 'assets/images/main_logo.png',
+      'title': 'Get Started Now',
+      'description': 'Join us and find your perfect companion today.',
+    },
+  ];
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Pet illustration from assets
-              Image.asset(
-                'assets/images/main_logo.png',
-                height: 320,
-                width: 320,
-              ),
-              const SizedBox(height: 40),
-              SizedBox(
-                width: 200,
-                child: Text(
-                  'Welcome To PawBuddy',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Aclonica',
-                  ),
-                ),
-              ),
-              const SizedBox(height: 15),
-              SizedBox(
-                width: 240,
-                child: Text(
-                  'Let\'s find your dream pet and be a home for homeless pets.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 18, fontFamily: 'Afacad'),
-                ),
-              ),
-              const SizedBox(height: 35),
-              ElevatedButton(
-                onPressed: () {
-                  // Navigate to RegistrationScreen when pressed
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const RegistrationScreen(),
+      body: Column(
+        children: [
+          Expanded(
+            child: PageView.builder(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentPage = index;
+                });
+              },
+              itemCount: _onboardingData.length,
+              itemBuilder: (context, index) {
+                final data = _onboardingData[index];
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Pet illustration from assets
+                        Image.asset(data['image']!, height: 320, width: 320),
+                        const SizedBox(height: 40),
+                        SizedBox(
+                          width: 250,
+                          child: Text(
+                            data['title']!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Aclonica',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 15),
+                        SizedBox(
+                          width: 280,
+                          child: Text(
+                            data['description']!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontFamily: 'Afacad',
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+                );
+              },
+            ),
+          ),
+          // Dots indicator
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              _onboardingData.length,
+              (index) => Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _currentPage == index
+                      ? const Color(0xFFF67D2C)
+                      : Colors.grey[300],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Get Started button only on last page
+          if (_currentPage == _onboardingData.length - 1)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  // Navigate to LoginScreen when pressed
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -68,9 +134,9 @@ class GetStartedScreenState extends State<GetstartedScreen> {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                child: Text(
+                child: const Text(
                   'Get Started',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -78,44 +144,9 @@ class GetStartedScreenState extends State<GetstartedScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Already have an account? ',
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 14,
-                      fontFamily: 'Afacad',
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size(0, 0),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: Text(
-                      'Log in',
-                      style: const TextStyle(
-                        color: Color(0xFFD86C2B),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        fontFamily: 'Afacad',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+            ),
+          const SizedBox(height: 40),
+        ],
       ),
     );
   }

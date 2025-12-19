@@ -108,54 +108,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              const SizedBox(height: 18),
-
-              Row(
-                children: [
-                  Expanded(child: Divider(color: Colors.grey[300])),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    child: Text(
-                      'Or Log In With',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontFamily: 'Afacad',
-                      ),
-                    ),
-                  ),
-                  Expanded(child: Divider(color: Colors.grey[300])),
-                ],
-              ),
-
-              const SizedBox(height: 18),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _socialCircle(
-                    child: const Icon(Icons.apple, color: Colors.black),
-                    onTap: () {},
-                  ),
-                  const SizedBox(width: 18),
-                  _socialCircle(
-                    child: Text(
-                      'G',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Afacad',
-                      ),
-                    ),
-                    onTap: () {},
-                  ),
-                  const SizedBox(width: 18),
-                  _socialCircle(
-                    child: const Icon(Icons.facebook, color: Color(0xFF1877F2)),
-                    onTap: () {},
-                  ),
-                ],
-              ),
-
               const SizedBox(height: 22),
 
               Row(
@@ -222,18 +174,6 @@ class _LoginScreenState extends State<LoginScreen> {
           borderRadius: BorderRadius.circular(28),
           borderSide: BorderSide(color: Colors.grey.shade400, width: 1.5),
         ),
-      ),
-    );
-  }
-
-  Widget _socialCircle({required Widget child, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: CircleAvatar(
-        radius: 22,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        child: child,
       ),
     );
   }

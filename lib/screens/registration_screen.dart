@@ -112,20 +112,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 ],
               ),
 
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    'Forgot password?',
-                    style: const TextStyle(
-                      color: Colors.redAccent,
-                      fontFamily: 'Afacad',
-                    ),
-                  ),
-                ),
-              ),
-
               const SizedBox(height: 8),
 
               // CTA
@@ -151,56 +137,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     ),
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 22),
-
-              // Or divider
-              Row(
-                children: <Widget>[
-                  Expanded(child: Divider(color: Colors.grey[300])),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    child: Text(
-                      'Or Sign Up With',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontFamily: 'Afacad',
-                      ),
-                    ),
-                  ),
-                  Expanded(child: Divider(color: Colors.grey[300])),
-                ],
-              ),
-
-              const SizedBox(height: 18),
-
-              // Social icons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _socialCircle(
-                    child: const Icon(Icons.apple, color: Colors.black),
-                    onTap: () {},
-                  ),
-                  const SizedBox(width: 18),
-                  _socialCircle(
-                    child: Text(
-                      'G',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Afacad',
-                      ),
-                    ),
-                    onTap: () {},
-                  ),
-                  const SizedBox(width: 18),
-                  _socialCircle(
-                    child: const Icon(Icons.facebook, color: Color(0xFF1877F2)),
-                    onTap: () {},
-                  ),
-                ],
               ),
 
               const SizedBox(height: 22),
@@ -267,19 +203,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           borderSide: BorderSide(color: Colors.grey.shade400, width: 1.5),
         ),
         suffixIcon: suffix,
-      ),
-    );
-  }
-
-  Widget _socialCircle({required Widget child, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: CircleAvatar(
-        radius: 22,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        child: child,
-        // add a subtle border
       ),
     );
   }
