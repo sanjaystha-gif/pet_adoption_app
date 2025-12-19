@@ -3,14 +3,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'registration_screen.dart';
 import 'login_screen.dart';
 
-class GetStartedScreen extends StatefulWidget {
-  const GetStartedScreen({super.key});
+class GetstartedScreen extends StatefulWidget {
+  const GetstartedScreen({super.key});
 
   @override
   GetStartedScreenState createState() => GetStartedScreenState();
 }
 
-class GetStartedScreenState extends State<GetStartedScreen> {
+class GetStartedScreenState extends State<GetstartedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(

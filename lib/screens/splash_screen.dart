@@ -17,7 +17,7 @@ class SplashScreenState extends State<SplashScreen> {
     // Wait 2.5 seconds then navigate to GetstartedScreen
     Timer(const Duration(milliseconds: 2500), () {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const GetStartedScreen()),
+        MaterialPageRoute(builder: (_) => const GetstartedScreen()),
       );
     });
   }

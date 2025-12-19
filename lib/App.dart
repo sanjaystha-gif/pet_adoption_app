@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
-        '/getstarted': (context) => const GetStartedScreen(),
+        '/getstarted': (context) => const GetstartedScreen(),
       },
     );
   }

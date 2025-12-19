@@ -39,15 +39,20 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               const SizedBox(height: 8),
               Text(
                 'Sign Up',
-                style: GoogleFonts.afacad(
+                style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
+                  fontFamily: 'Afacad',
                 ),
               ),
               const SizedBox(height: 6),
               Text(
                 'create a profile and find your friend.',
-                style: GoogleFonts.afacad(color: Colors.grey, fontSize: 14),
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
+                  fontFamily: 'Afacad',
+                ),
               ),
 
               const SizedBox(height: 28),
