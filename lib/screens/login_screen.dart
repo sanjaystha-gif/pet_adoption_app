@@ -13,7 +13,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
-
+  // Controller for password visibility toggle
   @override
   void dispose() {
     _usernameController.dispose();

@@ -11,7 +11,7 @@ class GetstartedScreen extends StatefulWidget {
 class GetStartedScreenState extends State<GetstartedScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-
+  // Onboarding data
   final List<Map<String, String>> _onboardingData = [
     {
       'image': 'assets/images/main_logo.png',

@@ -6,6 +6,7 @@ class HomePageScreen extends StatelessWidget {
 
   static const Color _accent = Color(0xFFF67D2C);
 
+  /// Sample pet data
   final List<Map<String, String>> _pets = const [
     {"name": "Shephard", "meta": "Adult | Playfull", "image": "shephard.jpg"},
     {"name": "Kaali", "meta": "Young | Loyal", "image": "kaali.jpg"},
