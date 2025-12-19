@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'registration_screen.dart';
 import 'homepage_screen.dart';
 
-///
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -14,7 +13,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
-
+  // Controller for password visibility toggle
   @override
   void dispose() {
     _usernameController.dispose();
