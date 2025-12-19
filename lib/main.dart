@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'App.dart'; // Import the App file
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'app.dart';
 
 void main() {
-  runApp(MyApp()); // Run the MyApp widget defined in App.dart
+  runApp(ProviderScope(child: MyApp()));
 }

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'login_screen.dart';
 
 class RegistrationScreen extends StatefulWidget {
-  const RegistrationScreen({Key? key}) : super(key: key);
+  const RegistrationScreen({super.key});
 
   @override
   State<RegistrationScreen> createState() => _RegistrationScreenState();
@@ -39,12 +38,20 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               const SizedBox(height: 8),
               Text(
                 'Sign Up',
-                style: GoogleFonts.afacad(fontSize: 32, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Afacad',
+                ),
               ),
               const SizedBox(height: 6),
               Text(
                 'create a profile and find your friend.',
-                style: GoogleFonts.afacad(color: Colors.grey, fontSize: 14),
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
+                  fontFamily: 'Afacad',
+                ),
               ),
 
               const SizedBox(height: 28),
@@ -92,25 +99,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       obscureText: _obscureConfirm,
                       suffix: IconButton(
                         icon: Icon(
-                          _obscureConfirm ? Icons.visibility_off : Icons.visibility,
+                          _obscureConfirm
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                           color: Colors.grey[600],
                         ),
-                        onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                        onPressed: () =>
+                            setState(() => _obscureConfirm = !_obscureConfirm),
                       ),
                     ),
                   ),
                 ],
-              ),
-
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: Text(
-                      'Forgot password?',
-                      style: GoogleFonts.afacad(color: Colors.redAccent),
-                    ),
-                ),
               ),
 
               const SizedBox(height: 8),
@@ -118,7 +117,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               // CTA
               SizedBox(
                 width: double.infinity,
-                  child: ElevatedButton(
+                child: ElevatedButton(
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
                     backgroundColor: orange,
@@ -131,46 +130,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ),
                   child: Text(
                     'Create An Account',
-                    style: GoogleFonts.afacad(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Afacad',
+                    ),
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 22),
-
-              // Or divider
-              Row(
-                children: <Widget>[
-                  Expanded(child: Divider(color: Colors.grey[300])),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    child: Text('Or Sign Up With', style: GoogleFonts.afacad(color: Colors.grey)),
-                  ),
-                  Expanded(child: Divider(color: Colors.grey[300])),
-                ],
-              ),
-
-              const SizedBox(height: 18),
-
-              // Social icons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _socialCircle(
-                    child: const Icon(Icons.apple, color: Colors.black),
-                    onTap: () {},
-                  ),
-                  const SizedBox(width: 18),
-                  _socialCircle(
-                    child: Text('G', style: GoogleFonts.afacad(fontSize: 20, fontWeight: FontWeight.bold)),
-                    onTap: () {},
-                  ),
-                  const SizedBox(width: 18),
-                  _socialCircle(
-                    child: const Icon(Icons.facebook, color: Color(0xFF1877F2)),
-                    onTap: () {},
-                  ),
-                ],
               ),
 
               const SizedBox(height: 22),
@@ -179,12 +145,24 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Already have an account? ', style: GoogleFonts.afacad(color: Colors.grey)),
+                  Text(
+                    'Already have an account? ',
+                    style: TextStyle(color: Colors.grey, fontFamily: 'Afacad'),
+                  ),
                   GestureDetector(
                     onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      );
                     },
-                    child: Text('Log in', style: GoogleFonts.afacad(color: Color(0xFFD86C2B), fontWeight: FontWeight.w600)),
+                    child: Text(
+                      'Log in',
+                      style: const TextStyle(
+                        color: Color(0xFFD86C2B),
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Afacad',
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -201,18 +179,21 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     TextInputType keyboardType = TextInputType.text,
     bool obscureText = false,
     Widget? suffix,
-  }) { 
+  }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      style: GoogleFonts.afacad(),
+      style: const TextStyle(fontFamily: 'Afacad'),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: GoogleFonts.afacad(color: Colors.grey.shade500),
+        hintStyle: TextStyle(color: Colors.grey.shade500, fontFamily: 'Afacad'),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 16,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(28),
           borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
@@ -222,19 +203,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           borderSide: BorderSide(color: Colors.grey.shade400, width: 1.5),
         ),
         suffixIcon: suffix,
-      ),
-    );
-  }
-
-  Widget _socialCircle({required Widget child, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: CircleAvatar(
-        radius: 22,
-        backgroundColor: Colors.white,
-        child: child,
-        foregroundColor: Colors.black,
-        // add a subtle border
       ),
     );
   }
