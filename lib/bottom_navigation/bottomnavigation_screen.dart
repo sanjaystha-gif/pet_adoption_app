@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BottomNavigationBarWidget extends ConsumerWidget {
+class BottomNavigationBarWidget extends StatelessWidget {
   final Color accent;
 
   const BottomNavigationBarWidget({super.key, required this.accent});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       decoration: BoxDecoration(
@@ -51,7 +50,7 @@ class BottomNavigationBarWidget extends ConsumerWidget {
   }
 }
 
-class _NavIcon extends ConsumerWidget {
+class _NavIcon extends StatelessWidget {
   final IconData icon;
   final bool active;
   final Color accent;
@@ -63,7 +62,7 @@ class _NavIcon extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return IconButton(
       onPressed: () {},
       icon: Icon(icon, color: active ? accent : Colors.grey[600]),

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pet_adoption_app/bottom_navigation/bottomnavigation_screen.dart';
 
-class HomePageScreen extends ConsumerWidget {
+class HomePageScreen extends StatelessWidget {
   const HomePageScreen({super.key});
 
   static const Color _accent = Color(0xFFF67D2C);
@@ -15,7 +14,7 @@ class HomePageScreen extends ConsumerWidget {
   ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F8),
       body: SafeArea(
@@ -172,7 +171,7 @@ class HomePageScreen extends ConsumerWidget {
   }
 }
 
-class _CategoryChip extends ConsumerWidget {
+class _CategoryChip extends StatelessWidget {
   final String label;
   final IconData icon;
   final bool active;
@@ -184,7 +183,7 @@ class _CategoryChip extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -222,7 +221,7 @@ class _CategoryChip extends ConsumerWidget {
   }
 }
 
-class _PetCard extends ConsumerWidget {
+class _PetCard extends StatelessWidget {
   final String name;
   final String meta;
   final String
@@ -235,7 +234,7 @@ class _PetCard extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {},
       child: Container(
