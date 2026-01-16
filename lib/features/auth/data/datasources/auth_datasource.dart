@@ -1,32 +1,50 @@
-import 'package:equatable/equatable.dart';
+import 'package:pet_adoption_app/features/auth/domain/entities/auth_entity.dart';
 
-class AuthEntity extends Equatable {
-  final String? authId;
-  final String firstName;
-  final String lastName;
-  final String email;
-  final String? phoneNumber;
-  final String address;
-  final String? password;
+abstract interface class IAuthLocalDataSource {
+  Future<void> register(AuthEntity user);
+  Future<AuthEntity?> getUser();
+  Future<void> deleteUser();
+}
 
-  const AuthEntity({
-    this.authId,
-    required this.firstName,
-    required this.lastName,
-    required this.email,
-    this.phoneNumber,
-    required this.address,
-    this.password,
-  });
+class AuthLocalDataSourceImpl implements IAuthLocalDataSource {
+  @override
+  Future<void> register(AuthEntity user) async {
+    // TODO: Implement local storage
+  }
 
   @override
-  List<Object?> get props => [
-    authId,
-    firstName,
-    lastName,
-    email,
-    phoneNumber,
-    address,
-    password,
-  ];
+  Future<AuthEntity?> getUser() async {
+    // TODO: Implement getting user from local storage
+    return null;
+  }
+
+  @override
+  Future<void> deleteUser() async {
+    // TODO: Implement delete user from local storage
+  }
+}
+
+abstract interface class IAuthRemoteDataSource {
+  Future<AuthEntity> login(String email, String password);
+  Future<AuthEntity> register(AuthEntity user);
+  Future<void> logout();
+}
+
+class AuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
+  @override
+  Future<AuthEntity> login(String email, String password) async {
+    // TODO: Implement API call
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<AuthEntity> register(AuthEntity user) async {
+    // TODO: Implement API call
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> logout() async {
+    // TODO: Implement API call
+  }
 }

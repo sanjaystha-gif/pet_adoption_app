@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pet_adoption_app/core/constants/hive_table_constant.dart';
-import 'package:pet_adoption_app/core/models/hive/auth_hive_model.dart';
+import 'package:pet_adoption_app/features/auth/data/models/auth_hive_model.dart';
 
 final hiveServiceProvider = Provider<HiveService>((ref) {
   return HiveService();

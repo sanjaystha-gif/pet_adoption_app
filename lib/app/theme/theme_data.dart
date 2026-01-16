@@ -1,28 +1,27 @@
 import 'package:flutter/material.dart';
 
 
-class ThemeData extends StatefulWidget {
-  const ThemeData({super.key});
+class AppThemeWidget extends StatefulWidget {
+  const AppThemeWidget({super.key});
 
   @override
-  State<ThemeData> createState() => _ThemeDataState();
+  State<AppThemeWidget> createState() => _AppThemeWidgetState();
 }
 
-class _ThemeDataState extends State<ThemeData> {
+class _AppThemeWidgetState extends State<AppThemeWidget> {
   @override
   Widget build(BuildContext context) {
     return const Placeholder();
   }
 }
 
-ThemeData getApplicationTheme() {
-
-  return ThemeData(
-    scaffoldBackgroundColor:Colors.white,
-    fontFamily: 'Montserrat-Regular',
-    colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF0B7C7C)),
-
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+MaterialApp getApplicationTheme() {
+  return MaterialApp(
+    theme: ThemeData(
+      scaffoldBackgroundColor: Colors.white,
+      fontFamily: 'Montserrat-Regular',
+      colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF0B7C7C)),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
       backgroundColor: Colors.white,
       selectedItemColor: Color(0xFF0B7C7C),
       unselectedItemColor: Colors.grey,
@@ -74,5 +73,6 @@ ThemeData getApplicationTheme() {
     //     color: Colors.grey,
     //   ),
     // ),
+    ),
   );
 }
