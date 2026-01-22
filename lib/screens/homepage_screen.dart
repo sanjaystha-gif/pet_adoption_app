@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'pet_details_screen.dart';
 
 class HomePageScreen extends StatelessWidget {
   const HomePageScreen({super.key});
@@ -6,11 +7,47 @@ class HomePageScreen extends StatelessWidget {
   static const Color _accent = Color(0xFFF67D2C);
 
   /// Sample pet data
-  final List<Map<String, String>> _pets = const [
-    {"name": "Shephard", "meta": "Adult | Playfull", "image": "shephard.jpg"},
-    {"name": "Kaali", "meta": "Young | Loyal", "image": "kaali.jpg"},
-    {"name": "Khaire", "meta": "Young | Active", "image": "khaire.jpg"},
-    {"name": "Gori", "meta": "Puppy | Protective", "image": "gori.jpg"},
+  final List<Map<String, dynamic>> _pets = const [
+    {
+      "name": "Shephard",
+      "meta": "Adult | Playfull",
+      "image": "shephard.jpg",
+      "breed": "German Shepherd",
+      "age": "Adult",
+      "gender": "Male",
+      "description":
+          "Shephard is a friendly and loyal German Shepherd who loves playing fetch and going on adventures. He is great with kids and other pets.",
+    },
+    {
+      "name": "Kaali",
+      "meta": "Young | Loyal",
+      "image": "kaali.jpg",
+      "breed": "Labrador",
+      "age": "Young",
+      "gender": "Female",
+      "description":
+          "Kaali is a young and energetic Labrador with a golden heart. She loves swimming and is very affectionate with her family.",
+    },
+    {
+      "name": "Khaire",
+      "meta": "Young | Active",
+      "image": "khaire.jpg",
+      "breed": "Beagle",
+      "age": "Young",
+      "gender": "Male",
+      "description":
+          "Khaire is an active and curious Beagle who loves exploring. He is playful and enjoys socializing with other dogs.",
+    },
+    {
+      "name": "Gori",
+      "meta": "Puppy | Protective",
+      "image": "gori.jpg",
+      "breed": "Poodle",
+      "age": "Puppy",
+      "gender": "Female",
+      "description":
+          "Gori is an adorable and intelligent Poodle puppy. She is already learning commands and loves cuddles.",
+    },
   ];
 
   @override
@@ -153,11 +190,7 @@ class HomePageScreen extends StatelessWidget {
                   itemBuilder: (context, idx) {
                     final pet = _pets[idx];
                     final imageName = pet['image'] ?? 'main_logo.png';
-                    return _PetCard(
-                      name: pet['name']!,
-                      meta: pet['meta']!,
-                      imageName: imageName,
-                    );
+                    return _PetCard(pet: pet, imageName: imageName);
                   },
                 ),
               ),
@@ -220,21 +253,19 @@ class _CategoryChip extends StatelessWidget {
 }
 
 class _PetCard extends StatelessWidget {
-  final String name;
-  final String meta;
-  final String
-  imageName; // filename only, e.g. 'Shephard.jpeg' or 'shephard.jpg'
+  final Map<String, dynamic> pet;
+  final String imageName;
 
-  const _PetCard({
-    required this.name,
-    required this.meta,
-    required this.imageName,
-  });
+  const _PetCard({required this.pet, required this.imageName});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => PetDetailsScreen(pet: pet)));
+      },
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -290,19 +321,23 @@ class _PetCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        name,
+                        pet['name'],
                         style: TextStyle(
                           fontFamily: 'Aclonica',
                           fontWeight: FontWeight.w700,
                           fontSize: 16,
                         ),
                       ),
-                      Icon(Icons.male, size: 16, color: Colors.orange[700]),
+                      Icon(
+                        pet['gender'] == 'Male' ? Icons.male : Icons.female,
+                        size: 16,
+                        color: Colors.orange[700],
+                      ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    meta,
+                    pet['meta'],
                     style: TextStyle(
                       fontFamily: 'Aclonica',
                       fontSize: 12,
