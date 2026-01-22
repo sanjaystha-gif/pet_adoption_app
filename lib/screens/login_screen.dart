@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'registration_screen.dart';
-import 'homepage_screen.dart';
+import 'main_navigation_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -142,10 +142,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: () {
                     _validateInputs();
                     if (_emailError.isEmpty && _passwordError.isEmpty) {
-                      // Navigate to HomePageScreen after successful login
+                      // Navigate to MainNavigationScreen after successful login
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
-                          builder: (_) => const HomePageScreen(),
+                          builder: (_) => const MainNavigationScreen(),
                         ),
                       );
                     }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:pet_adoption_app/bottom_navigation/bottomnavigation_screen.dart';
 
 class HomePageScreen extends StatelessWidget {
   const HomePageScreen({super.key});
@@ -166,8 +165,6 @@ class HomePageScreen extends StatelessWidget {
           ],
         ),
       ),
-
-      bottomNavigationBar: BottomNavigationBarWidget(accent: _accent),
     );
   }
 }
