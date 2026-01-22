@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'pet_details_screen.dart';
+import 'package:pet_adoption_app/presentation/screens/main/pet_details/pet_details_screen.dart';
 
 class HomePageScreen extends StatelessWidget {
   const HomePageScreen({super.key});

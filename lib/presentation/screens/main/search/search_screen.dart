@@ -48,24 +48,13 @@ class _SearchScreenState extends State<SearchScreen> {
                     fillColor: Colors.white,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 18,
-                      vertical: 16,
+                      vertical: 14,
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(28),
-                      borderSide: BorderSide(
-                        color: Colors.grey.shade300,
-                        width: 1,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(28),
-                      borderSide: BorderSide(
-                        color: Colors.grey.shade400,
-                        width: 1.5,
-                      ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
                   ),
-                  style: const TextStyle(fontFamily: 'Afacad'),
                 ),
               ],
             ),
@@ -78,10 +67,10 @@ class _SearchScreenState extends State<SearchScreen> {
                   Icon(Icons.search, size: 64, color: Colors.grey[300]),
                   const SizedBox(height: 16),
                   Text(
-                    'Search for your favorite pet',
+                    'Start searching for your favorite pet',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey[600],
+                      color: Colors.grey[500],
                       fontFamily: 'Afacad',
                     ),
                   ),

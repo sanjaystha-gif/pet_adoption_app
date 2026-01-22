@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'booking_form_screen.dart';
+import 'package:pet_adoption_app/presentation/screens/main/bookings/booking_form_screen.dart';
 
 class PetDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> pet;

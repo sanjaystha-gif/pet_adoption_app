@@ -53,15 +53,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     'No favorites yet',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey[600],
-                      fontFamily: 'Afacad',
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Add pets to your favorites to see them here',
-                    style: TextStyle(
-                      fontSize: 14,
                       color: Colors.grey[500],
                       fontFamily: 'Afacad',
                     ),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:pet_adoption_app/screens/homepage_screen.dart';
-import 'package:pet_adoption_app/screens/search_screen.dart';
-import 'package:pet_adoption_app/screens/favorites_screen.dart';
-import 'package:pet_adoption_app/screens/profile_screen.dart';
+import 'package:pet_adoption_app/presentation/screens/main/home/homepage_screen.dart';
+import 'package:pet_adoption_app/presentation/screens/main/search/search_screen.dart';
+import 'package:pet_adoption_app/presentation/screens/main/favorites/favorites_screen.dart';
+import 'package:pet_adoption_app/presentation/screens/main/profile/profile_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});

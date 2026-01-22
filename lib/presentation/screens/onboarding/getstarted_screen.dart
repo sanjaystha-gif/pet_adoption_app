@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
-import 'admin_login_screen.dart';
+import 'package:pet_adoption_app/presentation/screens/auth/login_screen.dart';
 
 class GetstartedScreen extends StatefulWidget {
   const GetstartedScreen({super.key});
@@ -118,56 +117,32 @@ class GetStartedScreenState extends State<GetstartedScreen> {
           if (_currentPage == _onboardingData.length - 1)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      // Navigate to LoginScreen when pressed
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF67D2C),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 80,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: const Text(
-                      'Get Started',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Afacad',
-                      ),
-                    ),
+              child: ElevatedButton(
+                onPressed: () {
+                  // Navigate to LoginScreen when pressed
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF67D2C),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 80,
+                    vertical: 16,
                   ),
-                  const SizedBox(height: 12),
-                  GestureDetector(
-                    onTap: () {
-                      // Navigate to AdminLoginScreen
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const AdminLoginScreen(),
-                        ),
-                      );
-                    },
-                    child: Text(
-                      'Admin Login',
-                      style: TextStyle(
-                        color: const Color(0xFFF67D2C),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Afacad',
-                      ),
-                    ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
                   ),
-                ],
+                ),
+                child: const Text(
+                  'Get Started',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Afacad',
+                  ),
+                ),
               ),
             ),
           const SizedBox(height: 40),

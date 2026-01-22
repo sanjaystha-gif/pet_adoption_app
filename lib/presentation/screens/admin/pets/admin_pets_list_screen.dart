@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'admin_add_pet_screen.dart';
-import 'admin_edit_pet_screen.dart';
+import 'package:pet_adoption_app/presentation/screens/admin/pets/admin_add_pet_screen.dart';
+import 'package:pet_adoption_app/presentation/screens/admin/pets/admin_edit_pet_screen.dart';
 
 class AdminPetsListScreen extends StatefulWidget {
   const AdminPetsListScreen({super.key});
@@ -222,13 +222,13 @@ class _PetListCard extends StatelessWidget {
             ),
             PopupMenuButton(
               itemBuilder: (context) => [
-                PopupMenuItem(child: const Text('Edit'), onTap: onEdit),
+                PopupMenuItem(onTap: onEdit, child: const Text('Edit')),
                 PopupMenuItem(
+                  onTap: onDelete,
                   child: const Text(
                     'Delete',
                     style: TextStyle(color: Colors.red),
                   ),
-                  onTap: onDelete,
                 ),
               ],
             ),

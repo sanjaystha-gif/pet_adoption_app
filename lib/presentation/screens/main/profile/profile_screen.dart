@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'my_bookings_screen.dart';
+import 'package:pet_adoption_app/presentation/screens/main/bookings/my_bookings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -11,8 +11,6 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
-    const orange = Color(0xFFF67D2C);
-
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),

@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
-import 'registration_screen.dart';
-import 'main_navigation_screen.dart';
+import 'package:pet_adoption_app/presentation/screens/admin/dashboard/admin_dashboard_screen.dart';
+import 'package:pet_adoption_app/presentation/screens/onboarding/getstarted_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class AdminLoginScreen extends StatefulWidget {
+  const AdminLoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<AdminLoginScreen> createState() => _AdminLoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _usernameController = TextEditingController();
+class _AdminLoginScreenState extends State<AdminLoginScreen> {
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
   String _emailError = '';
   String _passwordError = '';
-  // Controller for password visibility toggle
 
   bool _isValidEmail(String email) {
     final emailRegex = RegExp(
@@ -33,10 +32,10 @@ class _LoginScreenState extends State<LoginScreen> {
       _emailError = '';
       _passwordError = '';
 
-      if (_usernameController.text.isEmpty) {
+      if (_emailController.text.isEmpty) {
         _emailError = 'Email is required';
-      } else if (!_isValidEmail(_usernameController.text)) {
-        _emailError = 'Please enter a valid email (e.g., example@gmail.com)';
+      } else if (!_isValidEmail(_emailController.text)) {
+        _emailError = 'Please enter a valid email (e.g., admin@example.com)';
       }
 
       if (_passwordController.text.isEmpty) {
@@ -49,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -68,20 +67,32 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const SizedBox(height: 8),
               Text(
-                'Log In',
+                'Admin Login',
                 style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Afacad',
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 8),
+              Text(
+                'Manage pets and bookings',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
+                  fontFamily: 'Afacad',
+                ),
+              ),
+              const SizedBox(height: 32),
 
               _buildRoundedField(
-                controller: _usernameController,
-                hintText: 'Email',
+                controller: _emailController,
+                hintText: 'Admin Email',
                 keyboardType: TextInputType.emailAddress,
-                prefix: const Icon(Icons.person_outline, color: Colors.grey),
+                prefix: const Icon(
+                  Icons.admin_panel_settings_outlined,
+                  color: Colors.grey,
+                ),
               ),
               if (_emailError.isNotEmpty)
                 Padding(
@@ -123,18 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    'Forgot password?',
-                    style: TextStyle(color: Colors.grey, fontFamily: 'Afacad'),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 8),
+              const SizedBox(height: 24),
 
               SizedBox(
                 width: double.infinity,
@@ -142,10 +142,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: () {
                     _validateInputs();
                     if (_emailError.isEmpty && _passwordError.isEmpty) {
-                      // Navigate to MainNavigationScreen after successful login
+                      // Navigate to AdminDashboardScreen after successful login
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
-                          builder: (_) => const MainNavigationScreen(),
+                          builder: (_) => const AdminDashboardScreen(),
                         ),
                       );
                     }
@@ -160,7 +160,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     elevation: 0,
                   ),
                   child: Text(
-                    'Log In',
+                    'Login as Admin',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -176,19 +176,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "Don't you have an account? ",
+                    'Not an admin? ',
                     style: TextStyle(color: Colors.grey, fontFamily: 'Afacad'),
                   ),
                   GestureDetector(
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => const RegistrationScreen(),
+                          builder: (_) => const GetstartedScreen(),
                         ),
                       );
                     },
                     child: Text(
-                      'Click here',
+                      'Go back',
                       style: const TextStyle(
                         color: Color(0xFFD86C2B),
                         fontFamily: 'Afacad',

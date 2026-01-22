@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'admin_pets_list_screen.dart';
-import 'admin_booking_requests_screen.dart';
+import 'package:pet_adoption_app/presentation/screens/admin/pets/admin_pets_list_screen.dart';
+import 'package:pet_adoption_app/presentation/screens/admin/bookings/admin_booking_requests_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});

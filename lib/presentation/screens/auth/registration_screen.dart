@@ -66,46 +66,82 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final orange = const Color(0xFFF67D2C);
+    const orange = Color(0xFFF67D2C);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF7F7F8),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 8),
-              Text(
-                'Sign Up',
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Afacad',
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'create a profile and find your friend.',
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                  fontFamily: 'Afacad',
-                ),
-              ),
+              const SizedBox(height: 20),
 
+              // Logo/App Icon
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: orange,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: orange.withValues(alpha: 0.3),
+                      blurRadius: 20,
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.pets, color: Colors.white, size: 40),
+              ),
               const SizedBox(height: 28),
 
-              // Email field
+              // Title
+              Text(
+                'Create Account',
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Afacad',
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Create a profile and find your perfect companion',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                  fontFamily: 'Afacad',
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Email field label
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Email Address',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Afacad',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
               _buildRoundedField(
                 controller: _emailController,
-                hintText: 'Email',
+                hintText: 'Enter your email',
                 keyboardType: TextInputType.emailAddress,
+                prefix: const Icon(Icons.email_outlined, color: orange),
               ),
               if (_emailError.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(top: 8.0, left: 18.0),
+                  padding: const EdgeInsets.only(top: 8.0, left: 12.0),
                   child: Text(
                     _emailError,
                     style: const TextStyle(
@@ -116,31 +152,39 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ),
                 ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 20),
 
-              // Password field
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: _buildRoundedField(
-                      controller: _passwordController,
-                      hintText: 'Password',
-                      obscureText: _obscure,
-                      suffix: IconButton(
-                        icon: Icon(
-                          _obscure ? Icons.visibility_off : Icons.visibility,
-                          color: Colors.grey[600],
-                        ),
-                        onPressed: () => setState(() => _obscure = !_obscure),
-                      ),
-                    ),
+              // Password field label
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Password',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Afacad',
                   ),
-                ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildRoundedField(
+                controller: _passwordController,
+                hintText: 'At least 8 characters',
+                obscureText: _obscure,
+                prefix: const Icon(Icons.lock_outlined, color: orange),
+                suffix: IconButton(
+                  icon: Icon(
+                    _obscure
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: orange,
+                  ),
+                  onPressed: () => setState(() => _obscure = !_obscure),
+                ),
               ),
               if (_passwordError.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(top: 8.0, left: 18.0),
+                  padding: const EdgeInsets.only(top: 8.0, left: 12.0),
                   child: Text(
                     _passwordError,
                     style: const TextStyle(
@@ -151,34 +195,40 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ),
                 ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 20),
 
-              // Confirm Password field
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: _buildRoundedField(
-                      controller: _confirmPasswordController,
-                      hintText: 'Confirm Password',
-                      obscureText: _obscureConfirm,
-                      suffix: IconButton(
-                        icon: Icon(
-                          _obscureConfirm
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: Colors.grey[600],
-                        ),
-                        onPressed: () =>
-                            setState(() => _obscureConfirm = !_obscureConfirm),
-                      ),
-                    ),
+              // Confirm Password field label
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Confirm Password',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Afacad',
                   ),
-                ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildRoundedField(
+                controller: _confirmPasswordController,
+                hintText: 'Re-enter your password',
+                obscureText: _obscureConfirm,
+                prefix: const Icon(Icons.lock_outlined, color: orange),
+                suffix: IconButton(
+                  icon: Icon(
+                    _obscureConfirm
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: orange,
+                  ),
+                  onPressed: () =>
+                      setState(() => _obscureConfirm = !_obscureConfirm),
+                ),
               ),
               if (_confirmPasswordError.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(top: 8.0, left: 18.0),
+                  padding: const EdgeInsets.only(top: 8.0, left: 12.0),
                   child: Text(
                     _confirmPasswordError,
                     style: const TextStyle(
@@ -189,9 +239,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ),
                 ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 28),
 
-              // CTA
+              // CTA Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -204,31 +254,36 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Account created successfully!'),
+                          duration: Duration(seconds: 2),
                         ),
+                      );
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
                       );
                     }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: orange,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
                   ),
-                  child: Text(
-                    'Create An Account',
-                    style: const TextStyle(
+                  child: const Text(
+                    'Create Account',
+                    style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                       fontFamily: 'Afacad',
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 22),
+              const SizedBox(height: 28),
 
               // Bottom login text
               Row(
@@ -236,20 +291,25 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 children: [
                   Text(
                     'Already have an account? ',
-                    style: TextStyle(color: Colors.grey, fontFamily: 'Afacad'),
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontFamily: 'Afacad',
+                      fontSize: 14,
+                    ),
                   ),
                   GestureDetector(
                     onTap: () {
-                      Navigator.of(context).push(
+                      Navigator.of(context).pushReplacement(
                         MaterialPageRoute(builder: (_) => const LoginScreen()),
                       );
                     },
                     child: Text(
-                      'Log in',
+                      'Log In',
                       style: const TextStyle(
-                        color: Color(0xFFD86C2B),
-                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFF67D2C),
+                        fontWeight: FontWeight.w700,
                         fontFamily: 'Afacad',
+                        fontSize: 14,
                       ),
                     ),
                   ),
@@ -267,31 +327,45 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     required String hintText,
     TextInputType keyboardType = TextInputType.text,
     bool obscureText = false,
+    Widget? prefix,
     Widget? suffix,
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      style: const TextStyle(fontFamily: 'Afacad'),
+      style: const TextStyle(fontFamily: 'Afacad', fontSize: 15),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: TextStyle(color: Colors.grey.shade500, fontFamily: 'Afacad'),
+        hintStyle: TextStyle(
+          color: Colors.grey[500],
+          fontFamily: 'Afacad',
+          fontSize: 14,
+        ),
         filled: true,
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 16,
+          horizontal: 16,
+          vertical: 14,
+        ),
+        prefixIcon: prefix,
+        suffixIcon: suffix,
+        prefixIconConstraints: const BoxConstraints(
+          minWidth: 48,
+          minHeight: 48,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(28),
-          borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(28),
-          borderSide: BorderSide(color: Colors.grey.shade400, width: 1.5),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFF67D2C), width: 2),
         ),
-        suffixIcon: suffix,
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 1),
+        ),
       ),
     );
   }
