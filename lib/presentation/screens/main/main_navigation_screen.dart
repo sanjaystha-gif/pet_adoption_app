@@ -3,9 +3,12 @@ import 'package:pet_adoption_app/presentation/screens/main/home/homepage_screen.
 import 'package:pet_adoption_app/presentation/screens/main/search/search_screen.dart';
 import 'package:pet_adoption_app/presentation/screens/main/favorites/favorites_screen.dart';
 import 'package:pet_adoption_app/presentation/screens/main/profile/profile_screen.dart';
+import 'package:pet_adoption_app/presentation/providers/user_provider.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  final UserProvider userProvider;
+
+  const MainNavigationScreen({super.key, required this.userProvider});
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -23,7 +26,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       const HomePageScreen(),
       const SearchScreen(),
       const FavoritesScreen(),
-      const ProfileScreen(),
+      ProfileScreen(userProvider: widget.userProvider),
     ];
   }
 

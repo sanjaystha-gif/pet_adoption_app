@@ -1,21 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:pet_adoption_app/presentation/providers/user_provider.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({super.key});
+  final UserProvider userProvider;
+
+  const EditProfileScreen({super.key, required this.userProvider});
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  final _firstNameController = TextEditingController(text: 'John');
-  final _lastNameController = TextEditingController(text: 'Doe');
-  final _emailController = TextEditingController(text: 'john.doe@example.com');
-  final _phoneController = TextEditingController(text: '+977-9841234567');
-  final _addressController = TextEditingController(text: 'Kathmandu, Nepal');
-  final _bioController = TextEditingController(
-    text: 'Pet lover and animal enthusiast',
-  );
+  late TextEditingController _firstNameController;
+  late TextEditingController _lastNameController;
+  late TextEditingController _emailController;
+  late TextEditingController _phoneController;
+  late TextEditingController _addressController;
+  late TextEditingController _bioController;
+
+  @override
+  void initState() {
+    super.initState();
+    _firstNameController = TextEditingController(
+      text: widget.userProvider.user.firstName,
+    );
+    _lastNameController = TextEditingController(
+      text: widget.userProvider.user.lastName,
+    );
+    _emailController = TextEditingController(
+      text: widget.userProvider.user.email,
+    );
+    _phoneController = TextEditingController(
+      text: widget.userProvider.user.phone,
+    );
+    _addressController = TextEditingController(
+      text: widget.userProvider.user.address,
+    );
+    _bioController = TextEditingController(text: widget.userProvider.user.bio);
+  }
 
   @override
   void dispose() {
@@ -139,7 +161,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // TODO: Handle save profile logic with backend
+                  // Update user profile in provider
+                  widget.userProvider.updateProfile(
+                    firstName: _firstNameController.text,
+                    lastName: _lastNameController.text,
+                    email: _emailController.text,
+                    phone: _phoneController.text,
+                    address: _addressController.text,
+                    bio: _bioController.text,
+                  );
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Profile updated successfully!'),

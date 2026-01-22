@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:pet_adoption_app/presentation/screens/main/bookings/my_bookings_screen.dart';
+import 'package:pet_adoption_app/presentation/providers/user_provider.dart';
+import 'package:pet_adoption_app/presentation/screens/auth/login_screen.dart';
 import 'edit_profile_screen.dart';
 import 'saved_pets_screen.dart';
 import 'notifications_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final UserProvider userProvider;
+
+  const ProfileScreen({super.key, required this.userProvider});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -38,7 +42,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'John Doe',
+                  widget.userProvider.user.fullName,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -47,7 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'john.doe@example.com',
+                  widget.userProvider.user.email,
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[600],
@@ -64,7 +68,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               title: 'Edit Profile',
               onTap: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        EditProfileScreen(userProvider: widget.userProvider),
+                  ),
                 );
               },
             ),
@@ -103,7 +110,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  _showLogoutConfirmation(context);
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red[50],
                   foregroundColor: Colors.red,
@@ -113,9 +122,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   elevation: 0,
                 ),
-                child: Text(
+                child: const Text(
                   'Log Out',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     fontFamily: 'Afacad',
@@ -126,6 +135,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showLogoutConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            'Log Out',
+            style: TextStyle(fontFamily: 'Afacad', fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            'Are you sure you want to log out?',
+            style: TextStyle(fontFamily: 'Afacad'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(fontFamily: 'Afacad', color: Colors.grey),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Reset user data
+                widget.userProvider.reset();
+
+                // Pop the dialog
+                Navigator.pop(context);
+
+                // Navigate to login screen and remove all previous routes
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text(
+                'Log Out',
+                style: TextStyle(fontFamily: 'Afacad'),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

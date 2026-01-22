@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'registration_screen.dart';
 import 'admin_login_screen.dart';
 import 'package:pet_adoption_app/presentation/screens/main/main_navigation_screen.dart';
+import 'package:pet_adoption_app/presentation/providers/user_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -210,9 +211,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: () {
                     _validateInputs();
                     if (_emailError.isEmpty && _passwordError.isEmpty) {
+                      // Create user provider for the logged in user
+                      final userProvider = UserProvider();
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
-                          builder: (_) => const MainNavigationScreen(),
+                          builder: (_) =>
+                              MainNavigationScreen(userProvider: userProvider),
                         ),
                       );
                     }
