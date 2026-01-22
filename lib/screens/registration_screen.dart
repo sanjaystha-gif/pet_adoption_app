@@ -15,6 +15,46 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _obscure = true;
   bool _obscureConfirm = true;
+  String _emailError = '';
+  String _passwordError = '';
+  String _confirmPasswordError = '';
+
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    return emailRegex.hasMatch(email);
+  }
+
+  bool _isValidPassword(String password) {
+    return password.length >= 8;
+  }
+
+  void _validateInputs() {
+    setState(() {
+      _emailError = '';
+      _passwordError = '';
+      _confirmPasswordError = '';
+
+      if (_emailController.text.isEmpty) {
+        _emailError = 'Email is required';
+      } else if (!_isValidEmail(_emailController.text)) {
+        _emailError = 'Please enter a valid email (e.g., example@gmail.com)';
+      }
+
+      if (_passwordController.text.isEmpty) {
+        _passwordError = 'Password is required';
+      } else if (!_isValidPassword(_passwordController.text)) {
+        _passwordError = 'Password must be at least 8 characters';
+      }
+
+      if (_confirmPasswordController.text.isEmpty) {
+        _confirmPasswordError = 'Please confirm your password';
+      } else if (_passwordController.text != _confirmPasswordController.text) {
+        _confirmPasswordError = 'Passwords do not match';
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -63,6 +103,18 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 hintText: 'Email',
                 keyboardType: TextInputType.emailAddress,
               ),
+              if (_emailError.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0, left: 18.0),
+                  child: Text(
+                    _emailError,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontSize: 12,
+                      fontFamily: 'Afacad',
+                    ),
+                  ),
+                ),
 
               const SizedBox(height: 12),
 
@@ -86,6 +138,18 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ),
                 ],
               ),
+              if (_passwordError.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0, left: 18.0),
+                  child: Text(
+                    _passwordError,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontSize: 12,
+                      fontFamily: 'Afacad',
+                    ),
+                  ),
+                ),
 
               const SizedBox(height: 12),
 
@@ -112,6 +176,18 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ),
                 ],
               ),
+              if (_confirmPasswordError.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0, left: 18.0),
+                  child: Text(
+                    _confirmPasswordError,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontSize: 12,
+                      fontFamily: 'Afacad',
+                    ),
+                  ),
+                ),
 
               const SizedBox(height: 8),
 
@@ -119,7 +195,19 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    _validateInputs();
+                    if (_emailError.isEmpty &&
+                        _passwordError.isEmpty &&
+                        _confirmPasswordError.isEmpty) {
+                      // Proceed with account creation
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Account created successfully!'),
+                        ),
+                      );
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: orange,
                     foregroundColor: Colors.white,

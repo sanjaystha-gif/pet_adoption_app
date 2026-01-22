@@ -13,7 +13,40 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
+  String _emailError = '';
+  String _passwordError = '';
   // Controller for password visibility toggle
+
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    return emailRegex.hasMatch(email);
+  }
+
+  bool _isValidPassword(String password) {
+    return password.length >= 8;
+  }
+
+  void _validateInputs() {
+    setState(() {
+      _emailError = '';
+      _passwordError = '';
+
+      if (_usernameController.text.isEmpty) {
+        _emailError = 'Email is required';
+      } else if (!_isValidEmail(_usernameController.text)) {
+        _emailError = 'Please enter a valid email (e.g., example@gmail.com)';
+      }
+
+      if (_passwordController.text.isEmpty) {
+        _passwordError = 'Password is required';
+      } else if (!_isValidPassword(_passwordController.text)) {
+        _passwordError = 'Password must be at least 8 characters';
+      }
+    });
+  }
+
   @override
   void dispose() {
     _usernameController.dispose();
@@ -46,10 +79,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
               _buildRoundedField(
                 controller: _usernameController,
-                hintText: 'Username',
-                keyboardType: TextInputType.text,
+                hintText: 'Email',
+                keyboardType: TextInputType.emailAddress,
                 prefix: const Icon(Icons.person_outline, color: Colors.grey),
               ),
+              if (_emailError.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0, left: 18.0),
+                  child: Text(
+                    _emailError,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontSize: 12,
+                      fontFamily: 'Afacad',
+                    ),
+                  ),
+                ),
 
               const SizedBox(height: 12),
 
@@ -65,6 +110,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: () => setState(() => _obscure = !_obscure),
                 ),
               ),
+              if (_passwordError.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0, left: 18.0),
+                  child: Text(
+                    _passwordError,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontSize: 12,
+                      fontFamily: 'Afacad',
+                    ),
+                  ),
+                ),
 
               Align(
                 alignment: Alignment.centerRight,
@@ -83,10 +140,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Navigate to HomePageScreen after successful login
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => const HomePageScreen()),
-                    );
+                    _validateInputs();
+                    if (_emailError.isEmpty && _passwordError.isEmpty) {
+                      // Navigate to HomePageScreen after successful login
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (_) => const HomePageScreen(),
+                        ),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: orange,

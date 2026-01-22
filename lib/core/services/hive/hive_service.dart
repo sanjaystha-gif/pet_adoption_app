@@ -23,31 +23,51 @@ class HiveService {
     if (!Hive.isAdapterRegistered(HiveTableConstant.userTypeId)) {
       Hive.registerAdapter(AuthHiveModelAdapter());
     }
-
-    // if (!Hive.isAdapterRegistered(HiveTableConstant.userTypeId)) {
-    //   Hive.registerAdapter(BatchHiveModelAdapter());
-    // }
-
-    // if (!Hive.isAdapterRegistered(HiveTableConstant.categoryTypeId)) {
-    //   Hive.registerAdapter(CategoryHiveModelAdapter());
-    // }
   }
 
   /// Open all required boxes
   Future<void> _openBoxes() async {
     await Hive.openBox<AuthHiveModel>(HiveTableConstant.userTable);
-
-    // await Hive.openBox<BatchHiveModel>(
-    //   HiveTableConstant.batchTable,
-    // );
-
-    // await Hive.openBox<CategoryHiveModel>(
-    //   HiveTableConstant.categoryTable,
-    // );
   }
 
   /// Close all Hive boxes
   Future<void> close() async {
     await Hive.close();
+  }
+
+  /// Save authentication data
+  Future<void> saveAuthData(AuthHiveModel user) async {
+    final box = await Hive.openBox<AuthHiveModel>(HiveTableConstant.userTable);
+    await box.put(HiveTableConstant.userTable, user);
+  }
+
+  /// Get saved authentication data
+  Future<AuthHiveModel?> getAuthData() async {
+    final box = await Hive.openBox<AuthHiveModel>(HiveTableConstant.userTable);
+    return box.get(HiveTableConstant.userTable);
+  }
+
+  /// Clear authentication data
+  Future<void> clearAuthData() async {
+    final box = await Hive.openBox<AuthHiveModel>(HiveTableConstant.userTable);
+    await box.delete(HiveTableConstant.userTable);
+  }
+
+  /// Save authentication token
+  Future<void> saveToken(String token) async {
+    final box = await Hive.openBox<String>('token_box');
+    await box.put('auth_token', token);
+  }
+
+  /// Get saved authentication token
+  Future<String?> getToken() async {
+    final box = await Hive.openBox<String>('token_box');
+    return box.get('auth_token');
+  }
+
+  /// Delete authentication token
+  Future<void> deleteToken() async {
+    final box = await Hive.openBox<String>('token_box');
+    await box.delete('auth_token');
   }
 }
