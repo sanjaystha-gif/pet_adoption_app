@@ -1,13 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:pet_adoption_app/presentation/screens/main/pet_details/pet_details_screen.dart';
+import 'filter_screen.dart';
 
-class HomePageScreen extends StatelessWidget {
+class HomePageScreen extends StatefulWidget {
   const HomePageScreen({super.key});
 
+  @override
+  State<HomePageScreen> createState() => _HomePageScreenState();
+}
+
+class _HomePageScreenState extends State<HomePageScreen> {
   static const Color _accent = Color(0xFFF67D2C);
 
+  /// Current filter values
+  Map<String, dynamic> _currentFilters = {
+    'category': 'All',
+    'breed': 'All',
+    'age': 'All',
+    'gender': 'All',
+    'priceRange': const RangeValues(0, 50000),
+  };
+
   /// Sample pet data
-  final List<Map<String, dynamic>> _pets = const [
+  final List<Map<String, dynamic>> _allPets = const [
     {
       "name": "Shephard",
       "meta": "Adult | Playfull",
@@ -49,6 +64,54 @@ class HomePageScreen extends StatelessWidget {
           "Gori is an adorable and intelligent Poodle puppy. She is already learning commands and loves cuddles.",
     },
   ];
+
+  /// Get filtered pets based on current filter values
+  List<Map<String, dynamic>> get _filteredPets {
+    return _allPets.where((pet) {
+      // Category filter (we'll use breed as category proxy for now)
+      if (_currentFilters['category'] != 'All') {
+        // This would need actual category field in pets
+        // For now, we'll skip category filtering
+      }
+
+      // Breed filter
+      if (_currentFilters['breed'] != 'All') {
+        if (pet['breed'] != _currentFilters['breed']) {
+          return false;
+        }
+      }
+
+      // Age filter
+      if (_currentFilters['age'] != 'All') {
+        if (pet['age'] != _currentFilters['age']) {
+          return false;
+        }
+      }
+
+      // Gender filter
+      if (_currentFilters['gender'] != 'All') {
+        if (pet['gender'] != _currentFilters['gender']) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+  }
+
+  void _openFilterScreen() async {
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(
+        builder: (_) => FilterScreen(currentFilters: _currentFilters),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _currentFilters = result;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -154,19 +217,22 @@ class HomePageScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 6,
-                        ),
-                      ],
+                  GestureDetector(
+                    onTap: _openFilterScreen,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(Icons.tune, color: _accent),
                     ),
-                    padding: const EdgeInsets.all(8),
-                    child: Icon(Icons.tune, color: _accent),
                   ),
                 ],
               ),
@@ -178,21 +244,50 @@ class HomePageScreen extends StatelessWidget {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14.0),
-                child: GridView.builder(
-                  padding: const EdgeInsets.only(bottom: 80, top: 6),
-                  itemCount: _pets.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.78,
-                  ),
-                  itemBuilder: (context, idx) {
-                    final pet = _pets[idx];
-                    final imageName = pet['image'] ?? 'main_logo.png';
-                    return _PetCard(pet: pet, imageName: imageName);
-                  },
-                ),
+                child: _filteredPets.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.pets, size: 80, color: Colors.grey[400]),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No Pets Found',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Afacad',
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Try adjusting your filters',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: 'Afacad',
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : GridView.builder(
+                        padding: const EdgeInsets.only(bottom: 80, top: 6),
+                        itemCount: _filteredPets.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 14,
+                              crossAxisSpacing: 12,
+                              childAspectRatio: 0.78,
+                            ),
+                        itemBuilder: (context, idx) {
+                          final pet = _filteredPets[idx];
+                          final imageName = pet['image'] ?? 'main_logo.png';
+                          return _PetCard(pet: pet, imageName: imageName);
+                        },
+                      ),
               ),
             ),
           ],

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pet_adoption_app/presentation/screens/main/bookings/my_bookings_screen.dart';
+import 'edit_profile_screen.dart';
+import 'saved_pets_screen.dart';
+import 'notifications_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -59,7 +62,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _ProfileOptionTile(
               icon: Icons.person_outline,
               title: 'Edit Profile',
-              onTap: () {},
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+                );
+              },
             ),
             _ProfileOptionTile(
               icon: Icons.receipt_long,
@@ -73,22 +80,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _ProfileOptionTile(
               icon: Icons.favorite_outline,
               title: 'Saved Pets',
-              onTap: () {},
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SavedPetsScreen()),
+                );
+              },
             ),
             _ProfileOptionTile(
               icon: Icons.notifications_outlined,
               title: 'Notifications',
-              onTap: () {},
-            ),
-            _ProfileOptionTile(
-              icon: Icons.settings_outlined,
-              title: 'Settings',
-              onTap: () {},
-            ),
-            _ProfileOptionTile(
-              icon: Icons.help_outline,
-              title: 'Help & Support',
-              onTap: () {},
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const NotificationsScreen(),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 32),
 
