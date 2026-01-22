@@ -36,8 +36,8 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                 SnackBar(
                   content: Text(
                     _isFavorite
-                        ? '${pet['name']} added to favorites!'
-                        : '${pet['name']} removed from favorites!',
+                        ? '${widget.pet['name']} added to favorites!'
+                        : '${widget.pet['name']} removed from favorites!',
                   ),
                   duration: const Duration(seconds: 2),
                 ),
@@ -56,7 +56,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
               height: 300,
               color: Colors.grey[200],
               child: Image.asset(
-                'assets/images/${pet['image']}',
+                'assets/images/${widget.pet['image']}',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
                   color: Colors.grey[300],
@@ -79,7 +79,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            pet['name'] ?? 'Unknown',
+                            widget.pet['name'] ?? 'Unknown',
                             style: const TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
@@ -88,7 +88,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            pet['breed'] ?? 'Breed',
+                            widget.pet['breed'] ?? 'Breed',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],
@@ -98,7 +98,9 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                         ],
                       ),
                       Icon(
-                        pet['gender'] == 'Male' ? Icons.male : Icons.female,
+                        widget.pet['gender'] == 'Male'
+                            ? Icons.male
+                            : Icons.female,
                         color: const Color(0xFFF67D2C),
                         size: 32,
                       ),
@@ -111,7 +113,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                     children: [
                       _buildInfoPill(
                         icon: Icons.cake_outlined,
-                        label: pet['age'] ?? 'Age',
+                        label: widget.pet['age'] ?? 'Age',
                       ),
                       const SizedBox(width: 12),
                       _buildInfoPill(
@@ -121,7 +123,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                       const SizedBox(width: 12),
                       _buildInfoPill(
                         icon: Icons.pets,
-                        label: pet['gender'] ?? 'Gender',
+                        label: widget.pet['gender'] ?? 'Gender',
                       ),
                     ],
                   ),
@@ -129,7 +131,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
 
                   // Description Section
                   Text(
-                    'About ${pet['name']}',
+                    'About ${widget.pet['name']}',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -138,8 +140,8 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    pet['description'] ??
-                        'This is a wonderful pet looking for a loving home. ${pet['name']} is friendly, playful, and ready to be part of your family.',
+                    widget.pet['description'] ??
+                        'This is a wonderful pet looking for a loving home. ${widget.pet['name']} is friendly, playful, and ready to be part of your family.',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[700],
@@ -169,9 +171,15 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                         ),
                         const SizedBox(height: 12),
                         _buildDetailRow('Type', 'Dog'),
-                        _buildDetailRow('Breed', pet['breed'] ?? 'Unknown'),
-                        _buildDetailRow('Age', pet['age'] ?? 'Unknown'),
-                        _buildDetailRow('Gender', pet['gender'] ?? 'Unknown'),
+                        _buildDetailRow(
+                          'Breed',
+                          widget.pet['breed'] ?? 'Unknown',
+                        ),
+                        _buildDetailRow('Age', widget.pet['age'] ?? 'Unknown'),
+                        _buildDetailRow(
+                          'Gender',
+                          widget.pet['gender'] ?? 'Unknown',
+                        ),
                         _buildDetailRow('Health Status', 'Vaccinated'),
                       ],
                     ),
@@ -206,7 +214,9 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
           child: ElevatedButton(
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => BookingFormScreen(pet: pet)),
+                MaterialPageRoute(
+                  builder: (_) => BookingFormScreen(pet: widget.pet),
+                ),
               );
             },
             style: ElevatedButton.styleFrom(
