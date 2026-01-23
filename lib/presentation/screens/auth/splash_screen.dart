@@ -1,25 +1,50 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pet_adoption_app/features/auth/presentation/notifiers/auth_notifier.dart';
+import 'package:pet_adoption_app/presentation/providers/user_provider.dart';
 import '../onboarding/getstarted_screen.dart';
+import '../main/main_navigation_screen.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  SplashScreenState createState() => SplashScreenState();
+  ConsumerState<SplashScreen> createState() => SplashScreenState();
 }
 
-class SplashScreenState extends State<SplashScreen> {
+class SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
+    _checkAuthStatus();
+  }
 
-    // Wait 2.5 seconds then navigate to GetstartedScreen
-    Timer(const Duration(milliseconds: 2500), () {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const GetstartedScreen()),
-      );
+  void _checkAuthStatus() {
+    // Wait 2 seconds then check auth status
+    Timer(const Duration(milliseconds: 2000), () async {
+      // Check authentication status
+      final authNotifier = ref.read(authNotifierProvider);
+      final authState = await authNotifier.checkAuthStatus();
+
+      if (mounted) {
+        if (authState.isAuthenticated && authState.user != null) {
+          // User is logged in, go to main navigation
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => MainNavigationScreen(
+                userProvider: UserProvider.fromAuthEntity(authState.user!),
+              ),
+            ),
+          );
+        } else {
+          // User is not logged in, go to onboarding
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const GetstartedScreen()),
+          );
+        }
+      }
     });
   }
 

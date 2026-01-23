@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'registration_screen.dart';
 import 'admin_login_screen.dart';
 import 'package:pet_adoption_app/presentation/screens/main/main_navigation_screen.dart';
 import 'package:pet_adoption_app/presentation/providers/user_provider.dart';
+import 'package:pet_adoption_app/features/auth/presentation/notifiers/auth_notifier.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _usernameController = TextEditingController();
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
   String _emailError = '';
   String _passwordError = '';
-  // Controller for password visibility toggle
+  bool _isLoading = false;
 
   bool _isValidEmail(String email) {
     final emailRegex = RegExp(
@@ -35,9 +37,9 @@ class _LoginScreenState extends State<LoginScreen> {
       _emailError = '';
       _passwordError = '';
 
-      if (_usernameController.text.isEmpty) {
+      if (_emailController.text.isEmpty) {
         _emailError = 'Email is required';
-      } else if (!_isValidEmail(_usernameController.text)) {
+      } else if (!_isValidEmail(_emailController.text)) {
         _emailError = 'Please enter a valid email (e.g., example@gmail.com)';
       }
 
@@ -51,9 +53,42 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _handleLogin() async {
+    _validateInputs();
+    if (_emailError.isEmpty && _passwordError.isEmpty) {
+      setState(() => _isLoading = true);
+
+      // Call the auth notifier to login
+      final authNotifier = ref.read(authNotifierProvider);
+      final authState = await authNotifier.login(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+
+      setState(() => _isLoading = false);
+
+      if (authState.isAuthenticated && mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => MainNavigationScreen(
+              userProvider: UserProvider.fromAuthEntity(authState.user!),
+            ),
+          ),
+        );
+      } else if (authState.error != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authState.error ?? 'Login failed'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -126,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 8),
               _buildRoundedField(
-                controller: _usernameController,
+                controller: _emailController,
                 hintText: 'Enter your email',
                 keyboardType: TextInputType.emailAddress,
                 prefix: const Icon(Icons.email_outlined, color: orange),
@@ -208,19 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    _validateInputs();
-                    if (_emailError.isEmpty && _passwordError.isEmpty) {
-                      // Create user provider for the logged in user
-                      final userProvider = UserProvider();
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              MainNavigationScreen(userProvider: userProvider),
-                        ),
-                      );
-                    }
-                  },
+                  onPressed: _isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: orange,
                     foregroundColor: Colors.white,
@@ -230,15 +253,26 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Log In',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'Afacad',
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : const Text(
+                          'Log In',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Afacad',
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                 ),
               ),
 

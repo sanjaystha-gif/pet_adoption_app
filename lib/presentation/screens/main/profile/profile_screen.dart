@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pet_adoption_app/presentation/screens/main/bookings/my_bookings_screen.dart';
 import 'package:pet_adoption_app/presentation/providers/user_provider.dart';
 import 'package:pet_adoption_app/presentation/screens/auth/login_screen.dart';
+import 'package:pet_adoption_app/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'edit_profile_screen.dart';
 import 'saved_pets_screen.dart';
 import 'notifications_screen.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   final UserProvider userProvider;
 
   const ProfileScreen({super.key, required this.userProvider});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -160,18 +162,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             ElevatedButton(
-              onPressed: () {
-                // Reset user data
-                widget.userProvider.reset();
+              onPressed: () async {
+                // Call logout through the auth notifier
+                final authNotifier = ref.read(authNotifierProvider);
+                await authNotifier.logout();
 
                 // Pop the dialog
-                Navigator.pop(context);
+                if (mounted) {
+                  Navigator.pop(context);
 
-                // Navigate to login screen and remove all previous routes
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
+                  // Navigate to login screen and remove all previous routes
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,

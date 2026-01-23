@@ -53,6 +53,11 @@ class HiveService {
     await box.delete(HiveTableConstant.userTable);
   }
 
+  /// Delete authentication data (alias for clearAuthData)
+  Future<void> deleteAuthData() async {
+    await clearAuthData();
+  }
+
   /// Save authentication token
   Future<void> saveToken(String token) async {
     final box = await Hive.openBox<String>('token_box');
