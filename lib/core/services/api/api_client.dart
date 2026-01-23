@@ -23,18 +23,19 @@ class ApiClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          print('📤 REQUEST: ${options.method} ${options.path}');
-          print('Headers: ${options.headers}');
+          // Debug logging - uncomment for development
+          // print('REQUEST: ${options.method} ${options.path}');
+          // print('Headers: ${options.headers}');
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          print(
-            '📥 RESPONSE: ${response.statusCode} from ${response.requestOptions.path}',
-          );
+          // Debug logging - uncomment for development
+          // print('RESPONSE: ${response.statusCode} from ${response.requestOptions.path}',);
           return handler.next(response);
         },
         onError: (error, handler) {
-          print('❌ ERROR: ${error.message}');
+          // Debug logging - uncomment for development
+          // print('ERROR: ${error.message}');
           return handler.next(error);
         },
       ),

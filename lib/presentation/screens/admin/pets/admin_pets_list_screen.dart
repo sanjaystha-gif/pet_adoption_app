@@ -52,9 +52,14 @@ class _AdminPetsListScreenState extends State<AdminPetsListScreen> {
                     ),
                   );
                   if (result != null) {
+                    if (!mounted) return;
                     setState(() {
                       _pets.add(result);
                     });
+                    if (!mounted) {
+                      return;
+                    }
+                    // ignore: use_build_context_synchronously
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Pet added successfully!')),
                     );
@@ -106,9 +111,14 @@ class _AdminPetsListScreenState extends State<AdminPetsListScreen> {
                             ),
                           );
                           if (result != null) {
+                            if (!mounted) return;
                             setState(() {
                               _pets[index] = result;
                             });
+                            if (!mounted) {
+                              return;
+                            }
+                            // ignore: use_build_context_synchronously
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Pet updated successfully!'),
