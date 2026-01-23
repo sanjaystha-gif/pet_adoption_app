@@ -40,26 +40,44 @@ class AuthNotifier {
 
   Future<AuthState> login(String email, String password) async {
     try {
+      print('📤 Attempting login with email: $email');
       final response = await apiClient.post(
-        '/auth/login',
+        '/adopters/login',
         data: {'email': email, 'password': password},
       );
 
+      print('✅ Login response status: ${response.statusCode}');
+      print('📦 Response data: ${response.data}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final token = response.data['token'] as String;
-        final userData = response.data['user'] as Map<String, dynamic>;
+        // Handle different response formats
+        final token = response.data['token'] ?? response.data['accessToken'];
+        if (token == null) {
+          return AuthState(
+            isLoading: false,
+            error: 'No token in response from server',
+          );
+        }
+
+        final userData = response.data['user'] ?? response.data;
+        if (userData == null || userData is! Map) {
+          return AuthState(
+            isLoading: false,
+            error: 'Invalid user data in response',
+          );
+        }
 
         // Save token
         await hiveService.saveToken(token);
 
         // Create user entity
         final user = AuthEntity(
-          authId: userData['id'] ?? userData['_id'],
-          firstName: userData['firstName'] ?? '',
-          lastName: userData['lastName'] ?? '',
-          email: userData['email'] ?? '',
-          phoneNumber: userData['phoneNumber'],
-          address: userData['address'],
+          authId: userData['id'] ?? userData['_id'] ?? 'unknown',
+          firstName: userData['firstName'] ?? userData['first_name'] ?? '',
+          lastName: userData['lastName'] ?? userData['last_name'] ?? '',
+          email: userData['email'] ?? email ?? '',
+          phoneNumber: userData['phoneNumber'] ?? userData['phone_number'],
+          address: userData['address'] ?? '',
         );
 
         // Save user data to Hive
@@ -73,14 +91,19 @@ class AuthNotifier {
         );
         await hiveService.saveAuthData(hiveModel);
 
+        print('✅ Login successful for: ${user.email}');
         return AuthState(isAuthenticated: true, isLoading: false, user: user);
       } else {
-        return AuthState(
-          isLoading: false,
-          error: response.data['message'] ?? 'Login failed',
-        );
+        final errorMsg =
+            response.data['message'] ??
+            response.data['error'] ??
+            'Login failed';
+        print('❌ Login failed with status ${response.statusCode}: $errorMsg');
+        return AuthState(isLoading: false, error: errorMsg);
       }
     } catch (e) {
+      print('❌ Login Error: $e');
+      print('   Stack trace: ${StackTrace.current}');
       return AuthState(isLoading: false, error: 'Login error: ${e.toString()}');
     }
   }
@@ -94,17 +117,21 @@ class AuthNotifier {
     String address,
   ) async {
     try {
+      print('📤 Attempting registration for email: $email');
       final response = await apiClient.post(
-        '/auth/register',
+        '/adopters',
         data: {
-          'firstName': firstName,
-          'lastName': lastName,
+          'username': email, // Backend expects username
+          'name': '$firstName $lastName', // Combine first and last name
           'email': email,
           'password': password,
           'phoneNumber': phoneNumber,
           'address': address,
         },
       );
+
+      print('✅ Registration response status: ${response.statusCode}');
+      print('📦 Response data: ${response.data}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final token = response.data['token'] ?? response.data['accessToken'];
@@ -117,7 +144,7 @@ class AuthNotifier {
         // Create user entity
         final userData = response.data['user'] ?? response.data;
         final user = AuthEntity(
-          authId: userData['id'] ?? userData['_id'],
+          authId: userData['id'] ?? userData['_id'] ?? 'unknown',
           firstName: firstName,
           lastName: lastName,
           email: email,
@@ -136,14 +163,18 @@ class AuthNotifier {
         );
         await hiveService.saveAuthData(hiveModel);
 
+        print('✅ Registration successful for: $email');
         return AuthState(isAuthenticated: true, isLoading: false, user: user);
       } else {
-        return AuthState(
-          isLoading: false,
-          error: response.data['message'] ?? 'Registration failed',
+        final errorMsg = response.data['message'] ?? 'Registration failed';
+        print(
+          '❌ Registration failed with status ${response.statusCode}: $errorMsg',
         );
+        return AuthState(isLoading: false, error: errorMsg);
       }
     } catch (e) {
+      print('❌ Register Error: $e');
+      print('   Stack trace: ${StackTrace.current}');
       return AuthState(
         isLoading: false,
         error: 'Registration error: ${e.toString()}',
@@ -189,7 +220,7 @@ class AuthNotifier {
 
   Future<void> logout() async {
     try {
-      await apiClient.post('/auth/logout', data: {});
+      await apiClient.post('/adopters/logout', data: {});
     } catch (e) {
       // Ignore API errors
     } finally {
