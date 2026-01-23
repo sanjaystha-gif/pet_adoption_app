@@ -38,8 +38,11 @@ class Pet {
 }
 
 /// Pet list notifier - manages pets list with real-time updates
-class PetListNotifier extends StateNotifier<List<Pet>> {
-  PetListNotifier() : super([]);
+class PetListNotifier extends Notifier<List<Pet>> {
+  @override
+  List<Pet> build() {
+    return [];
+  }
 
   /// Add a new pet
   void addPet(Pet pet) {
@@ -71,8 +74,6 @@ class PetListNotifier extends StateNotifier<List<Pet>> {
 }
 
 /// Provider for pet list
-final petListProvider = StateNotifierProvider<PetListNotifier, List<Pet>>((
-  ref,
-) {
-  return PetListNotifier();
-});
+final petListProvider = NotifierProvider<PetListNotifier, List<Pet>>(
+  () => PetListNotifier(),
+);

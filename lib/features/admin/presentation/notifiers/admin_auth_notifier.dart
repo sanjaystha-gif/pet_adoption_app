@@ -47,7 +47,7 @@ class AdminAuthNotifier {
       print('📤 Attempting admin login with email: $email');
 
       final response = await apiClient.post(
-        '/adopters/login',
+        '/adopters/admin/login',
         data: {'email': email, 'password': password},
       );
 
@@ -63,7 +63,8 @@ class AdminAuthNotifier {
           );
         }
 
-        final userData = response.data['user'] ?? response.data;
+        final userData =
+            response.data['adopter'] ?? response.data['user'] ?? response.data;
         if (userData == null || userData is! Map) {
           return AdminAuthState(
             isLoading: false,
