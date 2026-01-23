@@ -40,14 +40,10 @@ class AuthNotifier {
 
   Future<AuthState> login(String email, String password) async {
     try {
-      print('📤 Attempting login with email: $email');
       final response = await apiClient.post(
         '/adopters/login',
         data: {'email': email, 'password': password},
       );
-
-      print('✅ Login response status: ${response.statusCode}');
-      print('📦 Response data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Handle different response formats
@@ -91,19 +87,15 @@ class AuthNotifier {
         );
         await hiveService.saveAuthData(hiveModel);
 
-        print('✅ Login successful for: ${user.email}');
         return AuthState(isAuthenticated: true, isLoading: false, user: user);
       } else {
         final errorMsg =
             response.data['message'] ??
             response.data['error'] ??
             'Login failed';
-        print('❌ Login failed with status ${response.statusCode}: $errorMsg');
         return AuthState(isLoading: false, error: errorMsg);
       }
     } catch (e) {
-      print('❌ Login Error: $e');
-      print('   Stack trace: ${StackTrace.current}');
       return AuthState(isLoading: false, error: 'Login error: ${e.toString()}');
     }
   }
@@ -117,7 +109,6 @@ class AuthNotifier {
     String address,
   ) async {
     try {
-      print('📤 Attempting registration for email: $email');
       final response = await apiClient.post(
         '/adopters',
         data: {
@@ -129,9 +120,6 @@ class AuthNotifier {
           'address': address,
         },
       );
-
-      print('✅ Registration response status: ${response.statusCode}');
-      print('📦 Response data: ${response.data}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final token = response.data['token'] ?? response.data['accessToken'];
@@ -163,18 +151,12 @@ class AuthNotifier {
         );
         await hiveService.saveAuthData(hiveModel);
 
-        print('✅ Registration successful for: $email');
         return AuthState(isAuthenticated: true, isLoading: false, user: user);
       } else {
         final errorMsg = response.data['message'] ?? 'Registration failed';
-        print(
-          '❌ Registration failed with status ${response.statusCode}: $errorMsg',
-        );
         return AuthState(isLoading: false, error: errorMsg);
       }
     } catch (e) {
-      print('❌ Register Error: $e');
-      print('   Stack trace: ${StackTrace.current}');
       return AuthState(
         isLoading: false,
         error: 'Registration error: ${e.toString()}',

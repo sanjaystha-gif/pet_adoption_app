@@ -13,12 +13,9 @@ void testLocalhost() async {
   final dio = Dio();
   final testData = {'email': 'test@test.com', 'password': 'test'};
 
-  print('🔍 Testing different localhost variants...\n');
-
   for (final url in variants) {
     try {
-      print('Testing: $url');
-      final response = await dio.post(
+      await dio.post(
         url,
         data: testData,
         options: Options(
@@ -26,10 +23,8 @@ void testLocalhost() async {
           receiveTimeout: const Duration(seconds: 5),
         ),
       );
-      print('✅ Status ${response.statusCode}');
-      print('   Response: ${response.data}\n');
     } catch (e) {
-      print('❌ Error: $e\n');
+      // Handle error silently
     }
   }
 }

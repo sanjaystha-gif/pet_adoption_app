@@ -27,36 +27,20 @@ class ApiClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          // Debug logging
-          print(
-            '🔵 REQUEST: ${options.method} ${options.baseUrl}${options.path}',
-          );
-          print('   Headers: ${options.headers}');
-          print('   Data: ${options.data}');
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          // Debug logging
-          print(
-            '🟢 RESPONSE: ${response.statusCode} from ${response.requestOptions.path}',
-          );
-          print('   Data: ${response.data}');
           return handler.next(response);
         },
         onError: (error, handler) {
-          // Debug logging
-          print('   ERROR: ${error.message}');
-          print('   Type: ${error.type}');
-          print('   Status Code: ${error.response?.statusCode}');
-          print('   Response Data: ${error.response?.data}');
-          print(
-            '   Request URL: ${error.requestOptions.baseUrl}${error.requestOptions.path}',
-          );
           return handler.next(error);
         },
       ),
     );
   }
+
+  /// Get the Dio instance
+  Dio get dio => _dio;
 
   /// Perform POST request
   Future<Response> post(
@@ -73,12 +57,6 @@ class ApiClient {
 
       return response;
     } on DioException catch (e) {
-      print('🔴 DioException caught in POST $endpoint');
-      print('   Message: ${e.message}');
-      print('   Type: ${e.type}');
-      print('   Status: ${e.response?.statusCode}');
-      print('   Response Data: ${e.response?.data}');
-
       String errorMessage = 'API Error';
 
       // Try to extract error message from response
@@ -99,7 +77,6 @@ class ApiClient {
         statusCode: e.response?.statusCode,
       );
     } catch (e) {
-      print('❌ Unexpected error in POST $endpoint: $e');
       rethrow;
     }
   }
@@ -115,12 +92,6 @@ class ApiClient {
 
       return response;
     } on DioException catch (e) {
-      print('🔴 DioException caught in GET $endpoint');
-      print('   Message: ${e.message}');
-      print('   Type: ${e.type}');
-      print('   Status: ${e.response?.statusCode}');
-      print('   Response Data: ${e.response?.data}');
-
       String errorMessage = 'API Error';
 
       if (e.response?.data is Map) {
@@ -140,7 +111,6 @@ class ApiClient {
         statusCode: e.response?.statusCode,
       );
     } catch (e) {
-      print('❌ Unexpected error in GET $endpoint: $e');
       rethrow;
     }
   }
@@ -160,12 +130,6 @@ class ApiClient {
 
       return response;
     } on DioException catch (e) {
-      print('🔴 DioException caught in PUT $endpoint');
-      print('   Message: ${e.message}');
-      print('   Type: ${e.type}');
-      print('   Status: ${e.response?.statusCode}');
-      print('   Response Data: ${e.response?.data}');
-
       String errorMessage = 'API Error';
 
       if (e.response?.data is Map) {
@@ -185,7 +149,6 @@ class ApiClient {
         statusCode: e.response?.statusCode,
       );
     } catch (e) {
-      print('❌ Unexpected error in PUT $endpoint: $e');
       rethrow;
     }
   }
@@ -201,12 +164,6 @@ class ApiClient {
 
       return response;
     } on DioException catch (e) {
-      print('🔴 DioException caught in DELETE $endpoint');
-      print('   Message: ${e.message}');
-      print('   Type: ${e.type}');
-      print('   Status: ${e.response?.statusCode}');
-      print('   Response Data: ${e.response?.data}');
-
       String errorMessage = 'API Error';
 
       if (e.response?.data is Map) {
@@ -226,7 +183,6 @@ class ApiClient {
         statusCode: e.response?.statusCode,
       );
     } catch (e) {
-      print('❌ Unexpected error in DELETE $endpoint: $e');
       rethrow;
     }
   }

@@ -44,15 +44,10 @@ class AdminAuthNotifier {
   /// Login as admin - verifies user is admin
   Future<AdminAuthState> adminLogin(String email, String password) async {
     try {
-      print('📤 Attempting admin login with email: $email');
-
       final response = await apiClient.post(
         '/adopters/admin/login',
         data: {'email': email, 'password': password},
       );
-
-      print('✅ Admin login response status: ${response.statusCode}');
-      print('📦 Response data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final token = response.data['token'] ?? response.data['accessToken'];
@@ -79,7 +74,6 @@ class AdminAuthNotifier {
             userData['admin'] == true;
 
         if (!isAdmin) {
-          print('❌ User is not an admin. Role: ${userData['role']}');
           return AdminAuthState(
             isLoading: false,
             error: 'Access denied. Only admin users can login here.',
@@ -112,7 +106,6 @@ class AdminAuthNotifier {
         );
         await hiveService.saveAuthData(hiveModel);
 
-        print('✅ Admin login successful for: ${user.email}');
         return AdminAuthState(
           isAuthenticated: true,
           isAdmin: true,
@@ -124,14 +117,9 @@ class AdminAuthNotifier {
             response.data['message'] ??
             response.data['error'] ??
             'Admin login failed';
-        print(
-          '❌ Admin login failed with status ${response.statusCode}: $errorMsg',
-        );
         return AdminAuthState(isLoading: false, error: errorMsg);
       }
     } catch (e) {
-      print('❌ Admin Login Error: $e');
-      print('   Stack trace: ${StackTrace.current}');
       return AdminAuthState(
         isLoading: false,
         error: 'Login error: ${e.toString()}',

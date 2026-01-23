@@ -21,21 +21,17 @@ class _ApiDebugTestState extends State<ApiDebugTest> {
     });
 
     try {
-      print('🔍 Testing API connectivity to http://localhost:5000');
-
       // Test 1: Basic connectivity to base URL
       final dio = Dio();
       try {
-        final response = await dio.get(
+        await dio.get(
           'http://localhost:5000',
           options: Options(
             validateStatus: (status) => status != null && status < 500,
             receiveTimeout: const Duration(seconds: 5),
           ),
         );
-        print('✅ Base URL response: ${response.statusCode}');
       } catch (e) {
-        print('❌ Base URL error: $e');
         throw Exception(
           'Cannot reach http://localhost:5000 - Backend server not running?',
         );
@@ -51,9 +47,6 @@ class _ApiDebugTestState extends State<ApiDebugTest> {
             receiveTimeout: const Duration(seconds: 5),
           ),
         );
-        print('✅ /auth/login endpoint response: ${response.statusCode}');
-        print('   Data: ${response.data}');
-
         setState(() {
           testResult =
               '''
@@ -66,7 +59,6 @@ API Connection Status: ✅ SUCCESS
           ''';
         });
       } catch (e) {
-        print('❌ /auth/login error: $e');
         setState(() {
           testResult = 'API endpoint error: $e';
         });

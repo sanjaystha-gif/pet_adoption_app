@@ -1,105 +1,143 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pet_adoption_app/presentation/providers/booking_provider.dart';
 
-class AdminBookingRequestsScreen extends StatefulWidget {
+class AdminBookingRequestsScreen extends ConsumerWidget {
   const AdminBookingRequestsScreen({super.key});
 
   @override
-  State<AdminBookingRequestsScreen> createState() =>
-      _AdminBookingRequestsScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bookingsAsync = ref.watch(adminBookingsProvider);
 
-class _AdminBookingRequestsScreenState
-    extends State<AdminBookingRequestsScreen> {
-  // Sample booking data - will be replaced with backend data
-  final List<Map<String, dynamic>> _bookings = [
-    {
-      'id': 1,
-      'customerName': 'John Doe',
-      'petName': 'Shephard',
-      'requestDate': '2026-01-20',
-      'status': 'Pending',
-      'customerEmail': 'john.doe@example.com',
-      'customerPhone': '+1-555-0123',
-    },
-    {
-      'id': 2,
-      'customerName': 'Jane Smith',
-      'petName': 'Kaali',
-      'requestDate': '2026-01-19',
-      'status': 'Pending',
-      'customerEmail': 'jane.smith@example.com',
-      'customerPhone': '+1-555-0124',
-    },
-    {
-      'id': 3,
-      'customerName': 'Bob Wilson',
-      'petName': 'Gori',
-      'requestDate': '2026-01-18',
-      'status': 'Approved',
-      'customerEmail': 'bob.wilson@example.com',
-      'customerPhone': '+1-555-0125',
-    },
-  ];
-
-  @override
-  Widget build(BuildContext context) {
     return SafeArea(
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              '${_bookings.where((b) => b['status'] == 'Pending').length} Pending Requests',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.orange,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Afacad',
+      child: bookingsAsync.when(
+        data: (bookings) {
+          if (bookings.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inbox, size: 64, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No booking requests yet',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
+            );
+          }
+
+          final pendingCount = bookings
+              .where((b) => b.status == 'pending')
+              .length;
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(adminBookingsProvider);
+              await ref.read(adminBookingsProvider.future);
+            },
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    '$pendingCount Pending Requests',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.orange,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Afacad',
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: bookings.length,
+                    itemBuilder: (context, index) {
+                      final booking = bookings[index];
+                      return _BookingRequestCard(
+                        booking: booking,
+                        onApprove: () =>
+                            _handleApprove(context, ref, booking.id),
+                        onReject: () => _handleReject(context, ref, booking.id),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
+          );
+        },
+        loading: () => const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF67D2C)),
           ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              itemCount: _bookings.length,
-              itemBuilder: (context, index) {
-                final booking = _bookings[index];
-                return _BookingRequestCard(
-                  booking: booking,
-                  onApprove: () {
-                    setState(() {
-                      _bookings[index]['status'] = 'Approved';
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Request approved!'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  onReject: () {
-                    setState(() {
-                      _bookings[index]['status'] = 'Rejected';
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Request rejected!'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
+        ),
+        error: (error, stackTrace) => Center(child: Text('Error: $error')),
       ),
     );
+  }
+
+  Future<void> _handleApprove(
+    BuildContext context,
+    WidgetRef ref,
+    String bookingId,
+  ) async {
+    final notes = await showDialog<String?>(
+      context: context,
+      builder: (context) => const _ApprovalDialog(),
+    );
+
+    if (context.mounted) {
+      final approveNotifier = ref.read(approveBookingProvider.notifier);
+      final success = await approveNotifier.approveBooking(
+        bookingId: bookingId,
+        adminNotes: notes,
+      );
+
+      if (success && context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Booking approved!')));
+      }
+    }
+  }
+
+  Future<void> _handleReject(
+    BuildContext context,
+    WidgetRef ref,
+    String bookingId,
+  ) async {
+    final result = await showDialog<Map<String, String?>?>(
+      context: context,
+      builder: (context) => const _RejectDialog(),
+    );
+
+    if (result != null && context.mounted) {
+      final rejectNotifier = ref.read(rejectBookingProvider.notifier);
+      final success = await rejectNotifier.rejectBooking(
+        bookingId: bookingId,
+        reason: result['reason'],
+        adminNotes: result['notes'],
+      );
+
+      if (success && context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Booking rejected!')));
+      }
+    }
   }
 }
 
 class _BookingRequestCard extends StatelessWidget {
-  final Map<String, dynamic> booking;
+  final dynamic booking;
   final VoidCallback onApprove;
   final VoidCallback onReject;
 
@@ -125,7 +163,7 @@ class _BookingRequestCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      booking['customerName'],
+                      booking.userName,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -134,7 +172,7 @@ class _BookingRequestCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Pet: ${booking['petName']}',
+                      'Pet: ${booking.petName}',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[600],
@@ -149,21 +187,21 @@ class _BookingRequestCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: booking['status'] == 'Pending'
-                        ? Colors.orange.withValues(alpha: 0.2)
-                        : booking['status'] == 'Approved'
-                        ? Colors.green.withValues(alpha: 0.2)
-                        : Colors.red.withValues(alpha: 0.2),
+                    color: booking.status == 'pending'
+                        ? Colors.orange.withOpacity(0.2)
+                        : booking.status == 'approved'
+                        ? Colors.green.withOpacity(0.2)
+                        : Colors.red.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    booking['status'],
+                    booking.status.toUpperCase(),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: booking['status'] == 'Pending'
+                      color: booking.status == 'pending'
                           ? Colors.orange
-                          : booking['status'] == 'Approved'
+                          : booking.status == 'approved'
                           ? Colors.green
                           : Colors.red,
                       fontFamily: 'Afacad',
@@ -193,7 +231,7 @@ class _BookingRequestCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Email: ${booking['customerEmail']}',
+                    'Email: ${booking.userEmail}',
                     style: TextStyle(
                       fontSize: 11,
                       color: Colors.grey[600],
@@ -201,7 +239,7 @@ class _BookingRequestCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Phone: ${booking['customerPhone']}',
+                    'Phone: ${booking.userPhone}',
                     style: TextStyle(
                       fontSize: 11,
                       color: Colors.grey[600],
@@ -212,7 +250,7 @@ class _BookingRequestCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            if (booking['status'] == 'Pending')
+            if (booking.status == 'pending')
               Row(
                 children: [
                   Expanded(
@@ -247,6 +285,145 @@ class _BookingRequestCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ApprovalDialog extends StatefulWidget {
+  const _ApprovalDialog();
+
+  @override
+  State<_ApprovalDialog> createState() => _ApprovalDialogState();
+}
+
+class _ApprovalDialogState extends State<_ApprovalDialog> {
+  late TextEditingController _notesController;
+
+  @override
+  void initState() {
+    super.initState();
+    _notesController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Approve Booking'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Add admin notes (optional):'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _notesController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: 'Enter admin notes...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, _notesController.text),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+          child: const Text('Approve'),
+        ),
+      ],
+    );
+  }
+}
+
+class _RejectDialog extends StatefulWidget {
+  const _RejectDialog();
+
+  @override
+  State<_RejectDialog> createState() => _RejectDialogState();
+}
+
+class _RejectDialogState extends State<_RejectDialog> {
+  late TextEditingController _reasonController;
+  late TextEditingController _notesController;
+
+  @override
+  void initState() {
+    super.initState();
+    _reasonController = TextEditingController();
+    _notesController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Reject Booking'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Please provide the reason for rejection:'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _reasonController,
+              decoration: InputDecoration(
+                labelText: 'Reason',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _notesController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: 'Additional Notes',
+                hintText: 'Optional admin notes...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, {
+            'reason': _reasonController.text,
+            'notes': _notesController.text,
+          }),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          child: const Text('Reject'),
+        ),
+      ],
     );
   }
 }
