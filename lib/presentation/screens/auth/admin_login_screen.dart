@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pet_adoption_app/features/admin/presentation/providers/admin_auth_provider.dart';
 import 'package:pet_adoption_app/presentation/screens/admin/dashboard/admin_dashboard_screen.dart';
 import 'package:pet_adoption_app/presentation/screens/onboarding/getstarted_screen.dart';
 
-class AdminLoginScreen extends StatefulWidget {
+class AdminLoginScreen extends ConsumerStatefulWidget {
   const AdminLoginScreen({super.key});
 
   @override
-  State<AdminLoginScreen> createState() => _AdminLoginScreenState();
+  ConsumerState<AdminLoginScreen> createState() => _AdminLoginScreenState();
 }
 
-class _AdminLoginScreenState extends State<AdminLoginScreen> {
+class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
@@ -139,15 +141,42 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     _validateInputs();
                     if (_emailError.isEmpty && _passwordError.isEmpty) {
-                      // Navigate to AdminDashboardScreen after successful login
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (_) => const AdminDashboardScreen(),
-                        ),
+                      // Show loading indicator
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Logging in as admin...')),
                       );
+
+                      // Call admin login
+                      final adminAuthNotifier = ref.read(
+                        adminAuthNotifierProvider,
+                      );
+                      final result = await adminAuthNotifier.adminLogin(
+                        _emailController.text,
+                        _passwordController.text,
+                      );
+
+                      if (!mounted) return;
+
+                      if (result.isAdmin && result.isAuthenticated) {
+                        // Navigate to AdminDashboardScreen
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (_) => const AdminDashboardScreen(),
+                          ),
+                        );
+                      } else {
+                        // Show error
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(result.error ?? 'Admin login failed'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
                     }
                   },
                   style: ElevatedButton.styleFrom(

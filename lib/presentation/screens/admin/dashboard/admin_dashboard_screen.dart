@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pet_adoption_app/features/admin/domain/providers/pet_provider.dart';
+import 'package:pet_adoption_app/features/admin/presentation/providers/admin_auth_provider.dart';
 import 'package:pet_adoption_app/presentation/screens/admin/pets/admin_pets_list_screen.dart';
 import 'package:pet_adoption_app/presentation/screens/admin/bookings/admin_booking_requests_screen.dart';
+import 'package:pet_adoption_app/presentation/screens/onboarding/getstarted_screen.dart';
 
-class AdminDashboardScreen extends StatefulWidget {
+class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
 
   @override
-  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
+  ConsumerState<AdminDashboardScreen> createState() =>
+      _AdminDashboardScreenState();
 }
 
-class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
+class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   int _selectedIndex = 0;
 
   late List<Widget> _screens;
@@ -47,7 +52,49 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ),
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: () async {
+              // Show logout confirmation
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Logout'),
+                  content: const Text('Are you sure you want to logout?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        Navigator.pop(context);
+
+                        // Logout
+                        final adminAuthNotifier = ref.read(
+                          adminAuthNotifierProvider,
+                        );
+                        await adminAuthNotifier.adminLogout();
+
+                        if (!mounted) return;
+
+                        // Clear pets when logging out
+                        ref.read(petListProvider.notifier).clearPets();
+
+                        // Navigate back to login
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (_) => const GetstartedScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'Logout',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
             icon: const Icon(Icons.logout, color: Colors.black),
           ),
         ],

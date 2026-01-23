@@ -10,30 +10,8 @@ class AdminPetsListScreen extends StatefulWidget {
 }
 
 class _AdminPetsListScreenState extends State<AdminPetsListScreen> {
-  // Sample pet data - will be replaced with backend data
-  final List<Map<String, dynamic>> _pets = [
-    {
-      'id': 1,
-      'name': 'Shephard',
-      'breed': 'German Shepherd',
-      'age': 'Adult',
-      'image': 'shephard.jpg',
-    },
-    {
-      'id': 2,
-      'name': 'Kaali',
-      'breed': 'Labrador',
-      'age': 'Young',
-      'image': 'kaali.jpg',
-    },
-    {
-      'id': 3,
-      'name': 'Gori',
-      'breed': 'Poodle',
-      'age': 'Puppy',
-      'image': 'gori.jpg',
-    },
-  ];
+  // Start with empty list - pets will be fetched from backend
+  final List<Map<String, dynamic>> _pets = [];
 
   @override
   Widget build(BuildContext context) {
