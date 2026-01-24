@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pet_adoption_app/presentation/providers/pet_provider.dart';
 import 'package:pet_adoption_app/presentation/screens/main/pet_details/pet_details_screen.dart';
 import 'filter_screen.dart';
 
-class HomePageScreen extends StatefulWidget {
+class HomePageScreen extends ConsumerStatefulWidget {
   const HomePageScreen({super.key});
 
   @override
-  State<HomePageScreen> createState() => _HomePageScreenState();
+  ConsumerState<HomePageScreen> createState() => _HomePageScreenState();
 }
 
-class _HomePageScreenState extends State<HomePageScreen> {
+class _HomePageScreenState extends ConsumerState<HomePageScreen> {
   static const Color _accent = Color(0xFFF67D2C);
 
   /// Current filter values
@@ -21,76 +23,33 @@ class _HomePageScreenState extends State<HomePageScreen> {
     'priceRange': const RangeValues(0, 50000),
   };
 
-  /// Sample pet data
-  final List<Map<String, dynamic>> _allPets = const [
-    {
-      "name": "Shephard",
-      "meta": "Adult | Playfull",
-      "image": "shephard.jpg",
-      "breed": "German Shepherd",
-      "age": "Adult",
-      "gender": "Male",
-      "description":
-          "Shephard is a friendly and loyal German Shepherd who loves playing fetch and going on adventures. He is great with kids and other pets.",
-    },
-    {
-      "name": "Kaali",
-      "meta": "Young | Loyal",
-      "image": "kaali.jpg",
-      "breed": "Labrador",
-      "age": "Young",
-      "gender": "Female",
-      "description":
-          "Kaali is a young and energetic Labrador with a golden heart. She loves swimming and is very affectionate with her family.",
-    },
-    {
-      "name": "Khaire",
-      "meta": "Young | Active",
-      "image": "khaire.jpg",
-      "breed": "Beagle",
-      "age": "Young",
-      "gender": "Male",
-      "description":
-          "Khaire is an active and curious Beagle who loves exploring. He is playful and enjoys socializing with other dogs.",
-    },
-    {
-      "name": "Gori",
-      "meta": "Puppy | Protective",
-      "image": "gori.jpg",
-      "breed": "Poodle",
-      "age": "Puppy",
-      "gender": "Female",
-      "description":
-          "Gori is an adorable and intelligent Poodle puppy. She is already learning commands and loves cuddles.",
-    },
-  ];
-
   /// Get filtered pets based on current filter values
-  List<Map<String, dynamic>> get _filteredPets {
-    return _allPets.where((pet) {
-      // Category filter (we'll use breed as category proxy for now)
+  List<dynamic> _applyFilters(List<dynamic> pets) {
+    return pets.where((pet) {
+      // Category filter
       if (_currentFilters['category'] != 'All') {
-        // This would need actual category field in pets
-        // For now, we'll skip category filtering
+        if (pet.category != _currentFilters['category']) {
+          return false;
+        }
       }
 
       // Breed filter
       if (_currentFilters['breed'] != 'All') {
-        if (pet['breed'] != _currentFilters['breed']) {
+        if (pet.breed != _currentFilters['breed']) {
           return false;
         }
       }
 
       // Age filter
       if (_currentFilters['age'] != 'All') {
-        if (pet['age'] != _currentFilters['age']) {
+        if (pet.age != _currentFilters['age']) {
           return false;
         }
       }
 
       // Gender filter
       if (_currentFilters['gender'] != 'All') {
-        if (pet['gender'] != _currentFilters['gender']) {
+        if (pet.gender != _currentFilters['gender']) {
           return false;
         }
       }
@@ -106,7 +65,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
       ),
     );
 
-    if (result != null) {
+    if (result != null && mounted) {
       setState(() {
         _currentFilters = result;
       });
@@ -115,6 +74,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final petsAsync = ref.watch(userPetsProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F8),
       body: SafeArea(
@@ -171,7 +132,13 @@ class _HomePageScreenState extends State<HomePageScreen> {
                       ],
                     ),
                   ),
-                  IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
+                  IconButton(
+                    onPressed: () async {
+                      // ignore: unused_result
+                      await ref.refresh(userPetsProvider.future);
+                    },
+                    icon: const Icon(Icons.refresh),
+                  ),
                 ],
               ),
             ),
@@ -240,54 +207,119 @@ class _HomePageScreenState extends State<HomePageScreen> {
 
             const SizedBox(height: 6),
 
-            // Grid of cards
+            // Grid of cards with loading/error handling
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14.0),
-                child: _filteredPets.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.pets, size: 80, color: Colors.grey[400]),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No Pets Found',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Afacad',
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Try adjusting your filters',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontFamily: 'Afacad',
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : GridView.builder(
-                        padding: const EdgeInsets.only(bottom: 80, top: 6),
-                        itemCount: _filteredPets.length,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 14,
-                              crossAxisSpacing: 12,
-                              childAspectRatio: 0.78,
-                            ),
-                        itemBuilder: (context, idx) {
-                          final pet = _filteredPets[idx];
-                          final imageName = pet['image'] ?? 'main_logo.png';
-                          return _PetCard(pet: pet, imageName: imageName);
-                        },
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  // ignore: unused_result
+                  await ref.refresh(userPetsProvider.future);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                  child: petsAsync.when(
+                    loading: () => Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(_accent),
                       ),
+                    ),
+                    error: (error, stack) => Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 80,
+                            color: Colors.red[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Error loading pets',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Afacad',
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            error.toString(),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontFamily: 'Afacad',
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () async {
+                              // ignore: unused_result
+                              await ref.refresh(userPetsProvider.future);
+                            },
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    data: (pets) {
+                      final filteredPets = _applyFilters(pets);
+                      return filteredPets.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.pets,
+                                    size: 80,
+                                    color: Colors.grey[400],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No Pets Found',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: 'Afacad',
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Try adjusting your filters',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontFamily: 'Afacad',
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : GridView.builder(
+                              padding: const EdgeInsets.only(
+                                bottom: 80,
+                                top: 6,
+                              ),
+                              itemCount: filteredPets.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    mainAxisSpacing: 14,
+                                    crossAxisSpacing: 12,
+                                    childAspectRatio: 0.78,
+                                  ),
+                              itemBuilder: (context, idx) {
+                                final pet = filteredPets[idx];
+                                return _PetCard(
+                                  pet: pet,
+                                  imageName: pet.imageUrl ?? 'main_logo.png',
+                                );
+                              },
+                            );
+                    },
+                  ),
+                ),
               ),
             ),
           ],
@@ -348,7 +380,7 @@ class _CategoryChip extends StatelessWidget {
 }
 
 class _PetCard extends StatelessWidget {
-  final Map<String, dynamic> pet;
+  final dynamic pet; // PetModel
   final String imageName;
 
   const _PetCard({required this.pet, required this.imageName});
@@ -416,7 +448,7 @@ class _PetCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        pet['name'],
+                        pet.name ?? 'Unknown',
                         style: TextStyle(
                           fontFamily: 'Aclonica',
                           fontWeight: FontWeight.w700,
@@ -424,7 +456,9 @@ class _PetCard extends StatelessWidget {
                         ),
                       ),
                       Icon(
-                        pet['gender'] == 'Male' ? Icons.male : Icons.female,
+                        (pet.gender ?? '').toLowerCase() == 'male'
+                            ? Icons.male
+                            : Icons.female,
                         size: 16,
                         color: Colors.orange[700],
                       ),
@@ -432,7 +466,7 @@ class _PetCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    pet['meta'],
+                    '${pet.age ?? 'Unknown'} | ${pet.breed ?? 'Unknown'}',
                     style: TextStyle(
                       fontFamily: 'Aclonica',
                       fontSize: 12,

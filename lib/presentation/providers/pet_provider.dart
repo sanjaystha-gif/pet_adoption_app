@@ -86,6 +86,18 @@ final adminUpdatedPetsProvider = FutureProvider<List<PetModel>>((ref) async {
   }
 });
 
+final userPetsProvider = FutureProvider<List<PetModel>>((ref) async {
+  final petApiClient = ref.watch(petApiClientProvider);
+  try {
+    final pets = await petApiClient.getAllPets();
+    return pets
+        .where((pet) => pet.postedBy == 'admin' || pet.postedByName == 'admin')
+        .toList();
+  } catch (e) {
+    return [];
+  }
+});
+
 final petDetailsProvider = FutureProvider.family<PetModel, String>((
   ref,
   petId,

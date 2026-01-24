@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pet_adoption_app/presentation/providers/pet_provider.dart';
 import 'package:pet_adoption_app/presentation/screens/admin/pets/admin_add_pet_screen.dart';
 import 'package:pet_adoption_app/presentation/screens/admin/pets/admin_edit_pet_screen.dart';
 
-class AdminPetsListScreen extends StatefulWidget {
+class AdminPetsListScreen extends ConsumerStatefulWidget {
   const AdminPetsListScreen({super.key});
 
   @override
-  State<AdminPetsListScreen> createState() => _AdminPetsListScreenState();
+  ConsumerState<AdminPetsListScreen> createState() =>
+      _AdminPetsListScreenState();
 }
 
-class _AdminPetsListScreenState extends State<AdminPetsListScreen> {
+class _AdminPetsListScreenState extends ConsumerState<AdminPetsListScreen> {
   // Start with empty list - pets will be fetched from backend
   final List<Map<String, dynamic>> _pets = [];
 
@@ -29,18 +32,21 @@ class _AdminPetsListScreenState extends State<AdminPetsListScreen> {
                       builder: (_) => const AdminAddPetScreen(),
                     ),
                   );
-                  if (result != null) {
-                    if (!mounted) return;
-                    setState(() {
-                      _pets.add(result);
-                    });
-                    if (!mounted) {
-                      return;
+                  if (result != null && mounted) {
+                    // If successful add to backend
+                    if (result['success'] == true) {
+                      // Invalidate providers to refresh from backend
+                      ref.invalidate(allPetsProvider);
+                      ref.invalidate(adminUpdatedPetsProvider);
+                      ref.invalidate(userPetsProvider);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Pet added and saved to database!'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
                     }
-                    // ignore: use_build_context_synchronously
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Pet added successfully!')),
-                    );
                   }
                 },
                 icon: const Icon(Icons.add),
@@ -88,20 +94,30 @@ class _AdminPetsListScreenState extends State<AdminPetsListScreen> {
                               builder: (_) => AdminEditPetScreen(pet: pet),
                             ),
                           );
-                          if (result != null) {
-                            if (!mounted) return;
-                            setState(() {
-                              _pets[index] = result;
-                            });
-                            if (!mounted) {
-                              return;
+                          if (result != null && mounted) {
+                            // If edit was successful, refresh providers
+                            if (result['success'] == true) {
+                              ref.invalidate(allPetsProvider);
+                              ref.invalidate(adminUpdatedPetsProvider);
+                              ref.invalidate(userPetsProvider);
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Pet updated successfully!'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            } else {
+                              // Local update for UI-only edits
+                              setState(() {
+                                _pets[index] = result;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Pet updated locally'),
+                                ),
+                              );
                             }
-                            // ignore: use_build_context_synchronously
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Pet updated successfully!'),
-                              ),
-                            );
                           }
                         },
                         onDelete: () {

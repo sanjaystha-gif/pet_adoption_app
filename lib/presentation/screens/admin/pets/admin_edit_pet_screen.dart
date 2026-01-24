@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pet_adoption_app/presentation/providers/pet_provider.dart';
+import 'package:pet_adoption_app/presentation/providers/api_providers.dart';
 
-class AdminEditPetScreen extends StatefulWidget {
+class AdminEditPetScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> pet;
 
   const AdminEditPetScreen({super.key, required this.pet});
 
   @override
-  State<AdminEditPetScreen> createState() => _AdminEditPetScreenState();
+  ConsumerState<AdminEditPetScreen> createState() => _AdminEditPetScreenState();
 }
 
-class _AdminEditPetScreenState extends State<AdminEditPetScreen> {
+class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
   late TextEditingController _nameController;
   late TextEditingController _breedController;
   late TextEditingController _descriptionController;
   late String _selectedAge;
   late String _selectedGender;
+  bool _isLoading = false;
 
   final List<String> _ages = ['Puppy', 'Young', 'Adult', 'Senior'];
   final List<String> _genders = ['Male', 'Female'];
@@ -264,17 +268,7 @@ class _AdminEditPetScreenState extends State<AdminEditPetScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  final updatedPet = {
-                    ...widget.pet,
-                    'name': _nameController.text,
-                    'breed': _breedController.text,
-                    'age': _selectedAge,
-                    'gender': _selectedGender,
-                    'description': _descriptionController.text,
-                  };
-                  Navigator.pop(context, updatedPet);
-                },
+                onPressed: _isLoading ? null : _saveChanges,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: orange,
                   foregroundColor: Colors.white,
@@ -283,19 +277,86 @@ class _AdminEditPetScreenState extends State<AdminEditPetScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'Save Changes',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Afacad',
-                  ),
-                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Save Changes',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Afacad',
+                        ),
+                      ),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _saveChanges() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final petService = ref.read(petServiceProvider);
+      final petId = widget.pet['id'] ?? widget.pet['_id'];
+
+      if (petId == null) {
+        throw Exception('Pet ID not found');
+      }
+
+      // Call backend to update pet
+      await petService.updatePet(
+        petId: petId.toString(),
+        name: _nameController.text,
+        breed: _breedController.text,
+        description: _descriptionController.text,
+        age: 0, // Age is stored as category string
+        gender: _selectedGender,
+        type: widget.pet['type'] ?? 'pet',
+        categoryId: _selectedAge, // Age category stored here
+        location: widget.pet['location'] ?? '',
+        mediaUrl: widget.pet['mediaUrl'] ?? '',
+        mediaType: widget.pet['mediaType'] ?? 'photo',
+      );
+
+      // Invalidate the pet cache to force refresh
+      ref.invalidate(allPetsProvider);
+      ref.invalidate(adminUpdatedPetsProvider);
+      ref.invalidate(userPetsProvider);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pet updated successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Return success to previous screen
+      Navigator.pop(context, {'success': true});
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error updating pet: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 }

@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pet_adoption_app/presentation/providers/pet_provider.dart';
+import 'package:pet_adoption_app/presentation/providers/api_providers.dart';
 
-class AdminAddPetScreen extends StatefulWidget {
+class AdminAddPetScreen extends ConsumerStatefulWidget {
   const AdminAddPetScreen({super.key});
 
   @override
-  State<AdminAddPetScreen> createState() => _AdminAddPetScreenState();
+  ConsumerState<AdminAddPetScreen> createState() => _AdminAddPetScreenState();
 }
 
-class _AdminAddPetScreenState extends State<AdminAddPetScreen> {
+class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
   final _nameController = TextEditingController();
   final _breedController = TextEditingController();
   final _descriptionController = TextEditingController();
   String _selectedAge = 'Puppy';
   String _selectedGender = 'Male';
+  bool _isLoading = false;
 
   final List<String> _ages = ['Puppy', 'Young', 'Adult', 'Senior'];
   final List<String> _genders = ['Male', 'Female'];
@@ -250,18 +254,7 @@ class _AdminAddPetScreenState extends State<AdminAddPetScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  final newPet = {
-                    'id': DateTime.now().millisecondsSinceEpoch,
-                    'name': _nameController.text,
-                    'breed': _breedController.text,
-                    'age': _selectedAge,
-                    'gender': _selectedGender,
-                    'description': _descriptionController.text,
-                    'image': 'main_logo.png',
-                  };
-                  Navigator.pop(context, newPet);
-                },
+                onPressed: _isLoading ? null : _addPetToBackend,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: orange,
                   foregroundColor: Colors.white,
@@ -270,19 +263,93 @@ class _AdminAddPetScreenState extends State<AdminAddPetScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'Add Pet',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Afacad',
-                  ),
-                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Add Pet',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Afacad',
+                        ),
+                      ),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _addPetToBackend() async {
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter pet name'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final petService = ref.read(petServiceProvider);
+
+      // Create pet with backend API
+      await petService.createPet(
+        name: _nameController.text,
+        description: _descriptionController.text,
+        type: 'pet',
+        categoryId: _selectedAge, // Use age category
+        location: 'Kathmandu',
+        mediaUrl: 'assets/images/main_logo.png',
+        mediaType: 'photo',
+        breed: _breedController.text,
+        age: 0, // Age stored as category
+        gender: _selectedGender,
+        size: 'medium',
+        healthStatus: 'healthy',
+        userId: 'admin', // Will be replaced by actual admin ID from auth
+      );
+
+      // Invalidate cache to refresh pet list
+      ref.invalidate(allPetsProvider);
+      ref.invalidate(adminUpdatedPetsProvider);
+      ref.invalidate(userPetsProvider);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pet added successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Return success
+      Navigator.pop(context, {'success': true});
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error adding pet: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 }
