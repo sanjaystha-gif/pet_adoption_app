@@ -1,4 +1,5 @@
 import 'package:pet_adoption_app/core/services/api/api_client.dart';
+import 'package:pet_adoption_app/core/services/api/api_service.dart';
 import 'package:pet_adoption_app/core/services/hive/hive_service.dart';
 import 'package:pet_adoption_app/features/auth/data/models/auth_hive_model.dart';
 import 'package:pet_adoption_app/features/auth/domain/entities/auth_entity.dart';
@@ -38,8 +39,13 @@ class AdminAuthState {
 class AdminAuthNotifier {
   final ApiClient apiClient;
   final HiveService hiveService;
+  final ApiService apiService;
 
-  AdminAuthNotifier({required this.apiClient, required this.hiveService});
+  AdminAuthNotifier({
+    required this.apiClient,
+    required this.hiveService,
+    required this.apiService,
+  });
 
   /// Login as admin - verifies user is admin
   Future<AdminAuthState> adminLogin(String email, String password) async {
@@ -82,8 +88,9 @@ class AdminAuthNotifier {
           );
         }
 
-        // Save admin token
+        // Save admin token to both HiveService and ApiService
         await hiveService.saveToken(token);
+        await apiService.saveToken(token);
 
         // Create user entity
         final user = AuthEntity(

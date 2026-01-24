@@ -49,6 +49,7 @@ class PetService {
           'name': name,
           'description': description,
           'type': type,
+          'species': 'dog',
           'category': categoryId,
           'location': location,
           'media': mediaUrl,
@@ -56,10 +57,9 @@ class PetService {
           'mediaType': mediaType,
           'breed': breed ?? '',
           'age': age ?? 0,
-          'gender': gender ?? '',
+          'gender': (gender ?? '').toLowerCase(),
           'size': size ?? '',
           'healthStatus': healthStatus ?? 'healthy',
-          'reportedBy': userId,
           'postedBy': userId,
         },
       );
@@ -197,7 +197,7 @@ class PetService {
       if (mediaType != null) data['mediaType'] = mediaType;
       if (breed != null) data['breed'] = breed;
       if (age != null) data['age'] = age;
-      if (gender != null) data['gender'] = gender;
+      if (gender != null) data['gender'] = gender.toLowerCase();
       if (size != null) data['size'] = size;
       if (healthStatus != null) data['healthStatus'] = healthStatus;
       if (isAdopted != null) {

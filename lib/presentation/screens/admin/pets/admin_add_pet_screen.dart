@@ -308,13 +308,13 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
       await petService.createPet(
         name: _nameController.text,
         description: _descriptionController.text,
-        type: 'pet',
-        categoryId: _selectedAge, // Use age category
+        type: 'available',
+        categoryId: '6973651cd96b87a44687ca13', // Dogs category ID
         location: 'Kathmandu',
         mediaUrl: 'assets/images/main_logo.png',
         mediaType: 'photo',
         breed: _breedController.text,
-        age: 0, // Age stored as category
+        age: _getAgeFromCategory(_selectedAge), // Convert category to age
         gender: _selectedGender,
         size: 'medium',
         healthStatus: 'healthy',
@@ -350,6 +350,22 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  /// Convert age category to numeric age
+  int _getAgeFromCategory(String category) {
+    switch (category) {
+      case 'Puppy':
+        return 1;
+      case 'Young':
+        return 3;
+      case 'Adult':
+        return 5;
+      case 'Senior':
+        return 10;
+      default:
+        return 0;
     }
   }
 }

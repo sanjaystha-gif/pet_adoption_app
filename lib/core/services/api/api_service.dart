@@ -9,8 +9,9 @@ import 'package:pet_adoption_app/core/error/failure.dart';
 /// and rate limiting support following the Node.js API architecture.
 class ApiService {
   // API Configuration - matches Node.js backend
-  static const String baseUrl = 'http://localhost:5000/api/v1';
-  // Change above to your actual backend URL
+  static const String baseUrl = 'http://10.0.2.2:5000/api/v1';
+  // For Android Emulator: 10.0.2.2 points to host computer
+  // For physical device or web: use your actual backend URL
   // Example: 'https://your-api.com/api/v1'
 
   static const String apiVersion = '/v1';
@@ -84,6 +85,13 @@ class ApiService {
         final token = await getStoredToken();
         if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
+          print(
+            '✅ Token added to request: Bearer ${token.substring(0, 20)}...',
+          );
+        } else {
+          print(
+            '⚠️ NO TOKEN FOUND - Request will fail if endpoint requires auth',
+          );
         }
         return handler.next(options);
       },
@@ -95,25 +103,25 @@ class ApiService {
     return InterceptorsWrapper(
       onRequest: (options, handler) {
         // Debug logging - uncomment for development
-        // print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        // print('📤 REQUEST');
-        // print('Method: ${options.method.toUpperCase()}');
-        // print('Path: ${options.path}');
-        // print('Query: ${options.queryParameters}');
-        // if (options.data != null) {
-        //   print('Data: ${options.data}');
-        // }
-        // print('Headers: ${options.headers}');
-        // print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        print('📤 REQUEST');
+        print('Method: ${options.method.toUpperCase()}');
+        print('Path: ${options.path}');
+        print('Query: ${options.queryParameters}');
+        if (options.data != null) {
+          print('Data: ${options.data}');
+        }
+        print('Headers: ${options.headers}');
+        print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         return handler.next(options);
       },
       onResponse: (response, handler) {
         // Debug logging - uncomment for development
-        // print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        // print('📥 RESPONSE: ${response.statusCode}');
-        // print('Path: ${response.requestOptions.path}');
-        // print('Data: ${response.data}');
-        // print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        print('📥 RESPONSE: ${response.statusCode}');
+        print('Path: ${response.requestOptions.path}');
+        print('Data: ${response.data}');
+        print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         return handler.next(response);
       },
       onError: (error, handler) {
@@ -150,9 +158,10 @@ class ApiService {
     try {
       _cachedToken = token;
       await _secureStorage.write(key: 'auth_token', value: token);
+      print('💾 Token saved successfully: ${token.substring(0, 30)}...');
     } catch (e) {
       // Debug logging - uncomment for development
-      // print('Error saving token: $e');
+      print('Error saving token: $e');
       rethrow;
     }
   }

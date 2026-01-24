@@ -13,11 +13,11 @@ class AdminPetsListScreen extends ConsumerStatefulWidget {
 }
 
 class _AdminPetsListScreenState extends ConsumerState<AdminPetsListScreen> {
-  // Start with empty list - pets will be fetched from backend
-  final List<Map<String, dynamic>> _pets = [];
-
   @override
   Widget build(BuildContext context) {
+    // Watch the admin updated pets provider to get real-time updates
+    final petsAsyncValue = ref.watch(adminUpdatedPetsProvider);
+
     return SafeArea(
       child: Column(
         children: [
@@ -63,101 +63,103 @@ class _AdminPetsListScreenState extends ConsumerState<AdminPetsListScreen> {
             ),
           ),
           Expanded(
-            child: _pets.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.pets, size: 64, color: Colors.grey[300]),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No pets added yet',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                            fontFamily: 'Afacad',
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    itemCount: _pets.length,
-                    itemBuilder: (context, index) {
-                      final pet = _pets[index];
-                      return _PetListCard(
-                        pet: pet,
-                        onEdit: () async {
-                          final result = await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => AdminEditPetScreen(pet: pet),
+            child: petsAsyncValue.when(
+              data: (pets) => pets.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.pets, size: 64, color: Colors.grey[300]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No pets added yet',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[600],
+                              fontFamily: 'Afacad',
                             ),
-                          );
-                          if (result != null && mounted) {
-                            // If edit was successful, refresh providers
-                            if (result['success'] == true) {
-                              ref.invalidate(allPetsProvider);
-                              ref.invalidate(adminUpdatedPetsProvider);
-                              ref.invalidate(userPetsProvider);
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      itemCount: pets.length,
+                      itemBuilder: (context, index) {
+                        final petModel = pets[index];
+                        // Convert PetModel to Map for compatibility
+                        final pet = {
+                          '_id': petModel.id,
+                          'id': petModel.id,
+                          'name': petModel.name,
+                          'breed': petModel.breed,
+                          'age': petModel.age,
+                          'gender': petModel.gender,
+                          'image': petModel.mediaUrl ?? 'pet_placeholder.png',
+                          'description': petModel.description,
+                          'type': petModel.type,
+                          'category': petModel.category,
+                          'location': petModel.location,
+                          'mediaUrl': petModel.mediaUrl,
+                          'mediaType': petModel.mediaType,
+                          'size': petModel.size,
+                          'healthStatus': petModel.healthStatus,
+                        };
+                        return _PetListCard(
+                          pet: pet,
+                          onEdit: () async {
+                            final result = await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => AdminEditPetScreen(pet: pet),
+                              ),
+                            );
+                            if (result != null && mounted) {
+                              // If edit was successful, refresh providers
+                              if (result['success'] == true) {
+                                ref.invalidate(allPetsProvider);
+                                ref.invalidate(adminUpdatedPetsProvider);
+                                ref.invalidate(userPetsProvider);
 
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Pet updated successfully!'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            } else {
-                              // Local update for UI-only edits
-                              setState(() {
-                                _pets[index] = result;
-                              });
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Pet updated locally'),
-                                ),
-                              );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Pet updated successfully!'),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              }
                             }
-                          }
-                        },
-                        onDelete: () {
-                          _showDeleteConfirmation(context, index, pet['name']);
-                        },
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteConfirmation(
-    BuildContext context,
-    int index,
-    String petName,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Pet'),
-        content: Text('Are you sure you want to delete $petName?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _pets.removeAt(index);
-              });
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Pet deleted successfully!')),
-              );
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                          },
+                        );
+                      },
+                    ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stackTrace) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error, size: 64, color: Colors.red[300]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error loading pets: $error',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.red[600],
+                        fontFamily: 'Afacad',
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        ref.invalidate(adminUpdatedPetsProvider);
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -168,13 +170,8 @@ class _AdminPetsListScreenState extends ConsumerState<AdminPetsListScreen> {
 class _PetListCard extends StatelessWidget {
   final Map<String, dynamic> pet;
   final VoidCallback onEdit;
-  final VoidCallback onDelete;
 
-  const _PetListCard({
-    required this.pet,
-    required this.onEdit,
-    required this.onDelete,
-  });
+  const _PetListCard({required this.pet, required this.onEdit});
 
   @override
   Widget build(BuildContext context) {
@@ -227,13 +224,6 @@ class _PetListCard extends StatelessWidget {
             PopupMenuButton(
               itemBuilder: (context) => [
                 PopupMenuItem(onTap: onEdit, child: const Text('Edit')),
-                PopupMenuItem(
-                  onTap: onDelete,
-                  child: const Text(
-                    'Delete',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                ),
               ],
             ),
           ],

@@ -319,12 +319,12 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
         name: _nameController.text,
         breed: _breedController.text,
         description: _descriptionController.text,
-        age: 0, // Age is stored as category string
+        age: _getAgeFromCategory(_selectedAge), // Convert category to age
         gender: _selectedGender,
-        type: widget.pet['type'] ?? 'pet',
-        categoryId: _selectedAge, // Age category stored here
-        location: widget.pet['location'] ?? '',
-        mediaUrl: widget.pet['mediaUrl'] ?? '',
+        type: widget.pet['type'] ?? 'available',
+        categoryId: '6973651cd96b87a44687ca13', // Dogs category ID
+        location: widget.pet['location'] ?? 'Kathmandu',
+        mediaUrl: widget.pet['mediaUrl'] ?? 'assets/images/main_logo.png',
         mediaType: widget.pet['mediaType'] ?? 'photo',
       );
 
@@ -357,6 +357,22 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  /// Convert age category to numeric age
+  int _getAgeFromCategory(String category) {
+    switch (category) {
+      case 'Puppy':
+        return 1;
+      case 'Young':
+        return 3;
+      case 'Adult':
+        return 5;
+      case 'Senior':
+        return 10;
+      default:
+        return 0;
     }
   }
 }
