@@ -85,13 +85,9 @@ class ApiService {
         final token = await getStoredToken();
         if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
-          print(
-            '✅ Token added to request: Bearer ${token.substring(0, 20)}...',
-          );
+          // Token added to request
         } else {
-          print(
-            '⚠️ NO TOKEN FOUND - Request will fail if endpoint requires auth',
-          );
+          // NO TOKEN FOUND - Request will fail if endpoint requires auth
         }
         return handler.next(options);
       },
@@ -103,25 +99,25 @@ class ApiService {
     return InterceptorsWrapper(
       onRequest: (options, handler) {
         // Debug logging - uncomment for development
-        print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        print('📤 REQUEST');
-        print('Method: ${options.method.toUpperCase()}');
-        print('Path: ${options.path}');
-        print('Query: ${options.queryParameters}');
-        if (options.data != null) {
-          print('Data: ${options.data}');
-        }
-        print('Headers: ${options.headers}');
-        print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        // print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        // print('📤 REQUEST');
+        // print('Method: ${options.method.toUpperCase()}');
+        // print('Path: ${options.path}');
+        // print('Query: ${options.queryParameters}');
+        // if (options.data != null) {
+        //   print('Data: ${options.data}');
+        // }
+        // print('Headers: ${options.headers}');
+        // print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         return handler.next(options);
       },
       onResponse: (response, handler) {
         // Debug logging - uncomment for development
-        print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        print('📥 RESPONSE: ${response.statusCode}');
-        print('Path: ${response.requestOptions.path}');
-        print('Data: ${response.data}');
-        print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        // print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        // print('📥 RESPONSE: ${response.statusCode}');
+        // print('Path: ${response.requestOptions.path}');
+        // print('Data: ${response.data}');
+        // print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         return handler.next(response);
       },
       onError: (error, handler) {
@@ -158,10 +154,10 @@ class ApiService {
     try {
       _cachedToken = token;
       await _secureStorage.write(key: 'auth_token', value: token);
-      print('💾 Token saved successfully: ${token.substring(0, 30)}...');
+      // Token saved successfully
     } catch (e) {
       // Debug logging - uncomment for development
-      print('Error saving token: $e');
+      // print('Error saving token: $e');
       rethrow;
     }
   }
