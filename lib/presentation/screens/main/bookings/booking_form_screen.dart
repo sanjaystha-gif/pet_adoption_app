@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class BookingFormScreen extends StatefulWidget {
-  final Map<String, dynamic> pet;
+  final dynamic pet; // Can be Map or PetModel/PetEntity
 
   const BookingFormScreen({super.key, required this.pet});
 
@@ -16,6 +16,23 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
   final _addressController = TextEditingController();
   final _reasonController = TextEditingController();
   bool _agreeToTerms = false;
+
+  /// Get pet value - handle both Map and Object types
+  dynamic _getPetValue(String key) {
+    if (widget.pet is Map) {
+      return widget.pet[key];
+    }
+    switch (key) {
+      case 'name':
+        return widget.pet.name ?? 'Unknown';
+      case 'breed':
+        return widget.pet.breed ?? 'Breed';
+      case 'age':
+        return widget.pet.age ?? 0;
+      default:
+        return null;
+    }
+  }
 
   @override
   void dispose() {
@@ -56,7 +73,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Please fill in the details below to request the adoption of ${widget.pet['name']}.',
+              'Please fill in the details below to request the adoption of ${_getPetValue('name')}.',
               style: const TextStyle(
                 fontSize: 14,
                 color: Colors.grey,
@@ -197,7 +214,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
 
             // Reason for Adoption
             Text(
-              'Why do you want to adopt ${widget.pet['name']}?',
+              'Why do you want to adopt ${_getPetValue('name')}?',
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,

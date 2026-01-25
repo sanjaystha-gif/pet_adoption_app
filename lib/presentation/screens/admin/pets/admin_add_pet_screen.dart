@@ -396,7 +396,7 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
         location: 'Kathmandu',
         mediaUrl:
             _selectedImage?.path ??
-            'profile.jpg', // Use selected image or default profile
+            'main_logo.png', // Use selected image or default app logo
         mediaType: 'photo',
         breed: _breedController.text,
         age: _getAgeFromCategory(_selectedAge), // Convert category to age

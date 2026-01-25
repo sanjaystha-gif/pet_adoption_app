@@ -410,7 +410,7 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
         mediaUrl:
             _selectedImage?.path ??
             widget.pet['mediaUrl'] ??
-            'profile.jpg', // Use selected image or keep existing
+            'main_logo.png', // Use selected image or keep existing or default app logo
         mediaType: widget.pet['mediaType'] ?? 'photo',
       );
 

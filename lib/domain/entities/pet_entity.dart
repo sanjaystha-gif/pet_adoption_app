@@ -45,8 +45,8 @@ class PetEntity extends Equatable {
     this.adoptedAt,
   });
 
-  /// Get image URL with default profile icon
-  String get imageUrl => mediaUrl.isNotEmpty ? mediaUrl : 'profile.jpg';
+  /// Get image URL with default app logo
+  String get imageUrl => mediaUrl.isNotEmpty ? mediaUrl : 'main_logo.png';
 
   @override
   List<Object?> get props => [
