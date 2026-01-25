@@ -170,13 +170,18 @@ class ApiService {
   Future<String?> getStoredToken() async {
     try {
       if (_cachedToken != null) {
+        print('📦 Token from cache: ${_cachedToken!.substring(0, 20)}...');
         return _cachedToken;
       }
       _cachedToken = await _secureStorage.read(key: 'auth_token');
+      if (_cachedToken != null) {
+        print('📦 Token from storage: ${_cachedToken!.substring(0, 20)}...');
+      } else {
+        print('📦 No token found in storage');
+      }
       return _cachedToken;
     } catch (e) {
-      // Debug logging - uncomment for development
-      // print('Error retrieving token: $e');
+      print('❌ Error retrieving token: $e');
       return null;
     }
   }

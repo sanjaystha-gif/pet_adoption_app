@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pet_adoption_app/core/services/api/api_service.dart';
 import 'package:pet_adoption_app/core/services/api/booking_service.dart';
 import 'package:pet_adoption_app/data/models/booking_model.dart';
-import 'package:pet_adoption_app/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'package:pet_adoption_app/presentation/providers/api_providers.dart';
 
 final bookingServiceProvider = Provider<BookingService>((ref) {
-  final apiClient = ref.watch(apiClientProvider);
-  return BookingService(apiClient.dio);
+  final apiService = ApiService(); // Get the ApiService singleton with auth
+  return BookingService(apiService.dio); // Use dio which is _dioWithAuth
 });
 
 final userBookingsProvider = FutureProvider<List<BookingModel>>((ref) async {
