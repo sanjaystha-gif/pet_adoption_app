@@ -198,6 +198,9 @@ class ApiService {
     }
   }
 
+  /// Get the authenticated Dio instance with auth interceptor
+  Dio get dio => _dioWithAuth;
+
   // ==================== HTTP METHODS ====================
 
   /// Perform POST request (Public - No Auth)
