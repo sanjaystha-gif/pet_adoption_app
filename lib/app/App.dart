@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pet_adoption_app/screens/splash_screen.dart';
+import 'package:pet_adoption_app/presentation/screens/auth/splash_screen.dart';
 
 const String _appTitle = 'PawBuddy';
 

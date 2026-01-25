@@ -1,21 +1,81 @@
 import 'package:flutter/material.dart';
-import 'package:pet_adoption_app/bottom_navigation/bottomnavigation_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pet_adoption_app/presentation/providers/pet_provider.dart';
+import 'package:pet_adoption_app/presentation/screens/main/pet_details/pet_details_screen.dart';
+import 'filter_screen.dart';
 
-class HomePageScreen extends StatelessWidget {
+class HomePageScreen extends ConsumerStatefulWidget {
   const HomePageScreen({super.key});
 
+  @override
+  ConsumerState<HomePageScreen> createState() => _HomePageScreenState();
+}
+
+class _HomePageScreenState extends ConsumerState<HomePageScreen> {
   static const Color _accent = Color(0xFFF67D2C);
 
-  /// Sample pet data
-  final List<Map<String, String>> _pets = const [
-    {"name": "Shephard", "meta": "Adult | Playfull", "image": "shephard.jpg"},
-    {"name": "Kaali", "meta": "Young | Loyal", "image": "kaali.jpg"},
-    {"name": "Khaire", "meta": "Young | Active", "image": "khaire.jpg"},
-    {"name": "Gori", "meta": "Puppy | Protective", "image": "gori.jpg"},
-  ];
+  /// Current filter values
+  Map<String, dynamic> _currentFilters = {
+    'category': 'All',
+    'breed': 'All',
+    'age': 'All',
+    'gender': 'All',
+    'priceRange': const RangeValues(0, 50000),
+  };
+
+  /// Get filtered pets based on current filter values
+  List<dynamic> _applyFilters(List<dynamic> pets) {
+    return pets.where((pet) {
+      // Category filter
+      if (_currentFilters['category'] != 'All') {
+        if (pet.category != _currentFilters['category']) {
+          return false;
+        }
+      }
+
+      // Breed filter
+      if (_currentFilters['breed'] != 'All') {
+        if (pet.breed != _currentFilters['breed']) {
+          return false;
+        }
+      }
+
+      // Age filter
+      if (_currentFilters['age'] != 'All') {
+        if (pet.age != _currentFilters['age']) {
+          return false;
+        }
+      }
+
+      // Gender filter
+      if (_currentFilters['gender'] != 'All') {
+        if (pet.gender != _currentFilters['gender']) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+  }
+
+  void _openFilterScreen() async {
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(
+        builder: (_) => FilterScreen(currentFilters: _currentFilters),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _currentFilters = result;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final petsAsync = ref.watch(userPetsProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F8),
       body: SafeArea(
@@ -72,7 +132,13 @@ class HomePageScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
+                  IconButton(
+                    onPressed: () async {
+                      // ignore: unused_result
+                      await ref.refresh(userPetsProvider.future);
+                    },
+                    icon: const Icon(Icons.refresh),
+                  ),
                 ],
               ),
             ),
@@ -118,19 +184,22 @@ class HomePageScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 6,
-                        ),
-                      ],
+                  GestureDetector(
+                    onTap: _openFilterScreen,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(Icons.tune, color: _accent),
                     ),
-                    padding: const EdgeInsets.all(8),
-                    child: Icon(Icons.tune, color: _accent),
                   ),
                 ],
               ),
@@ -138,36 +207,124 @@ class HomePageScreen extends StatelessWidget {
 
             const SizedBox(height: 6),
 
-            // Grid of cards
+            // Grid of cards with loading/error handling
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14.0),
-                child: GridView.builder(
-                  padding: const EdgeInsets.only(bottom: 80, top: 6),
-                  itemCount: _pets.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.78,
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  // ignore: unused_result
+                  await ref.refresh(userPetsProvider.future);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                  child: petsAsync.when(
+                    loading: () => Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(_accent),
+                      ),
+                    ),
+                    error: (error, stack) => Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 80,
+                            color: Colors.red[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Error loading pets',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Afacad',
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            error.toString(),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontFamily: 'Afacad',
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () async {
+                              // ignore: unused_result
+                              await ref.refresh(userPetsProvider.future);
+                            },
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    data: (pets) {
+                      final filteredPets = _applyFilters(pets);
+                      return filteredPets.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.pets,
+                                    size: 80,
+                                    color: Colors.grey[400],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No Pets Found',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: 'Afacad',
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Try adjusting your filters',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontFamily: 'Afacad',
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : GridView.builder(
+                              padding: const EdgeInsets.only(
+                                bottom: 80,
+                                top: 6,
+                              ),
+                              itemCount: filteredPets.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    mainAxisSpacing: 14,
+                                    crossAxisSpacing: 12,
+                                    childAspectRatio: 0.78,
+                                  ),
+                              itemBuilder: (context, idx) {
+                                final pet = filteredPets[idx];
+                                return _PetCard(
+                                  pet: pet,
+                                  imageName: pet.imageUrl ?? 'main_logo.png',
+                                );
+                              },
+                            );
+                    },
                   ),
-                  itemBuilder: (context, idx) {
-                    final pet = _pets[idx];
-                    final imageName = pet['image'] ?? 'main_logo.png';
-                    return _PetCard(
-                      name: pet['name']!,
-                      meta: pet['meta']!,
-                      imageName: imageName,
-                    );
-                  },
                 ),
               ),
             ),
           ],
         ),
       ),
-
-      bottomNavigationBar: BottomNavigationBarWidget(accent: _accent),
     );
   }
 }
@@ -223,21 +380,19 @@ class _CategoryChip extends StatelessWidget {
 }
 
 class _PetCard extends StatelessWidget {
-  final String name;
-  final String meta;
-  final String
-  imageName; // filename only, e.g. 'Shephard.jpeg' or 'shephard.jpg'
+  final dynamic pet; // PetModel
+  final String imageName;
 
-  const _PetCard({
-    required this.name,
-    required this.meta,
-    required this.imageName,
-  });
+  const _PetCard({required this.pet, required this.imageName});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => PetDetailsScreen(pet: pet)));
+      },
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -293,19 +448,25 @@ class _PetCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        name,
+                        pet.name ?? 'Unknown',
                         style: TextStyle(
                           fontFamily: 'Aclonica',
                           fontWeight: FontWeight.w700,
                           fontSize: 16,
                         ),
                       ),
-                      Icon(Icons.male, size: 16, color: Colors.orange[700]),
+                      Icon(
+                        (pet.gender ?? '').toLowerCase() == 'male'
+                            ? Icons.male
+                            : Icons.female,
+                        size: 16,
+                        color: Colors.orange[700],
+                      ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    meta,
+                    '${pet.age ?? 'Unknown'} | ${pet.breed ?? 'Unknown'}',
                     style: TextStyle(
                       fontFamily: 'Aclonica',
                       fontSize: 12,

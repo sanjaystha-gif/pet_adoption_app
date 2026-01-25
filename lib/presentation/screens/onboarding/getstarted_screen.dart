@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
+import 'package:pet_adoption_app/presentation/screens/auth/login_screen.dart';
 
 class GetstartedScreen extends StatefulWidget {
   const GetstartedScreen({super.key});

@@ -1,0 +1,22 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pet_adoption_app/core/services/api/api_client.dart';
+import 'package:pet_adoption_app/core/services/api/api_service.dart';
+import 'package:pet_adoption_app/core/services/hive/hive_service.dart';
+import '../notifiers/admin_auth_notifier.dart';
+
+// Create singleton instances
+final apiClientProvider = Provider((ref) => ApiClient());
+final hiveServiceProvider = Provider((ref) => HiveService());
+final apiServiceProvider = Provider((ref) => ApiService());
+
+// Admin auth notifier provider
+final adminAuthNotifierProvider = Provider((ref) {
+  final apiClient = ref.watch(apiClientProvider);
+  final hiveService = ref.watch(hiveServiceProvider);
+  final apiService = ref.watch(apiServiceProvider);
+  return AdminAuthNotifier(
+    apiClient: apiClient,
+    hiveService: hiveService,
+    apiService: apiService,
+  );
+});
