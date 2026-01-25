@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'package:pet_adoption_app/presentation/providers/pet_provider.dart';
 import 'package:pet_adoption_app/presentation/providers/api_providers.dart';
 
@@ -17,6 +19,8 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
   String _selectedAge = 'Puppy';
   String _selectedGender = 'Male';
   bool _isLoading = false;
+  File? _selectedImage;
+  final ImagePicker _imagePicker = ImagePicker();
 
   final List<String> _ages = ['Puppy', 'Young', 'Adult', 'Senior'];
   final List<String> _genders = ['Male', 'Female'];
@@ -250,6 +254,61 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
             ),
             const SizedBox(height: 24),
 
+            // Pet Image
+            Text(
+              'Pet Image',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Afacad',
+              ),
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: _pickImage,
+              child: Container(
+                width: double.infinity,
+                height: 150,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!, width: 2),
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.grey[50],
+                ),
+                child: _selectedImage != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.file(_selectedImage!, fit: BoxFit.cover),
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.cloud_upload_outlined,
+                            size: 48,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Tap to upload pet image',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontFamily: 'Afacad',
+                            ),
+                          ),
+                          Text(
+                            'Default profile icon will be used if not provided',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                              fontFamily: 'Afacad',
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
             // Save Button
             SizedBox(
               width: double.infinity,
@@ -288,6 +347,30 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
     );
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _addPetToBackend() async {
     if (_nameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -311,7 +394,9 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
         type: 'available',
         categoryId: '6973651cd96b87a44687ca13', // Dogs category ID
         location: 'Kathmandu',
-        mediaUrl: 'assets/images/main_logo.png',
+        mediaUrl:
+            _selectedImage?.path ??
+            'profile.jpg', // Use selected image or default profile
         mediaType: 'photo',
         breed: _breedController.text,
         age: _getAgeFromCategory(_selectedAge), // Convert category to age

@@ -95,7 +95,9 @@ class _AdminPetsListScreenState extends ConsumerState<AdminPetsListScreen> {
                           'breed': petModel.breed,
                           'age': petModel.age,
                           'gender': petModel.gender,
-                          'image': petModel.mediaUrl ?? 'pet_placeholder.png',
+                          'image': petModel.mediaUrl.isNotEmpty
+                              ? petModel.mediaUrl
+                              : 'pet_placeholder.png',
                           'description': petModel.description,
                           'type': petModel.type,
                           'category': petModel.category,

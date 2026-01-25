@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'package:pet_adoption_app/presentation/providers/pet_provider.dart';
 import 'package:pet_adoption_app/presentation/providers/api_providers.dart';
 
@@ -19,6 +21,8 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
   late String _selectedAge;
   late String _selectedGender;
   bool _isLoading = false;
+  File? _selectedImage;
+  final ImagePicker _imagePicker = ImagePicker();
 
   final List<String> _ages = ['Puppy', 'Young', 'Adult', 'Senior'];
   final List<String> _genders = ['Male', 'Female'];
@@ -264,6 +268,61 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
             ),
             const SizedBox(height: 24),
 
+            // Pet Image
+            Text(
+              'Pet Image',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Afacad',
+              ),
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: _pickImage,
+              child: Container(
+                width: double.infinity,
+                height: 150,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!, width: 2),
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.grey[50],
+                ),
+                child: _selectedImage != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.file(_selectedImage!, fit: BoxFit.cover),
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.cloud_upload_outlined,
+                            size: 48,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Tap to upload pet image',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontFamily: 'Afacad',
+                            ),
+                          ),
+                          Text(
+                            'Or keep the current image',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                              fontFamily: 'Afacad',
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
             // Save Button
             SizedBox(
               width: double.infinity,
@@ -302,6 +361,30 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
     );
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _saveChanges() async {
     setState(() => _isLoading = true);
 
@@ -324,7 +407,10 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
         type: widget.pet['type'] ?? 'available',
         categoryId: '6973651cd96b87a44687ca13', // Dogs category ID
         location: widget.pet['location'] ?? 'Kathmandu',
-        mediaUrl: widget.pet['mediaUrl'] ?? 'assets/images/main_logo.png',
+        mediaUrl:
+            _selectedImage?.path ??
+            widget.pet['mediaUrl'] ??
+            'profile.jpg', // Use selected image or keep existing
         mediaType: widget.pet['mediaType'] ?? 'photo',
       );
 

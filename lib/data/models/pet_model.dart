@@ -111,6 +111,9 @@ class PetModel {
     };
   }
 
+  /// Get image URL with default profile icon
+  String get imageUrl => mediaUrl.isNotEmpty ? mediaUrl : 'profile.jpg';
+
   /// Convert to Entity
   PetEntity toEntity() {
     return PetEntity(
