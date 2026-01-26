@@ -18,8 +18,8 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
   late TextEditingController _nameController;
   late TextEditingController _breedController;
   late TextEditingController _descriptionController;
-  late String _selectedAge;
-  late String _selectedGender;
+  String _selectedAge = 'Puppy'; // Default value
+  String _selectedGender = 'Male'; // Default value
   bool _isLoading = false;
   File? _selectedImage;
   final ImagePicker _imagePicker = ImagePicker();
@@ -37,18 +37,25 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
     );
     // Convert numeric age to category string
     final petAge = widget.pet['age'];
-    _selectedAge = _getCategoryFromAge(
+    // ignore: avoid_print
+    print('🔍 Pet age from backend: $petAge (type: ${petAge.runtimeType})');
+
+    final convertedAge = _getCategoryFromAge(
       petAge is int ? petAge : int.tryParse(petAge.toString()) ?? 0,
     );
-    _selectedGender = widget.pet['gender'] ?? 'Male';
-  }
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _breedController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
+    // Ensure the converted age is in the dropdown list
+    _selectedAge = _ages.contains(convertedAge) ? convertedAge : 'Puppy';
+
+    // ignore: avoid_print
+    print('✅ Converted to category: $_selectedAge');
+    print('✅ Valid ages: $_ages');
+
+    // Ensure gender is capitalized
+    final genderFromBackend = (widget.pet['gender'] ?? 'Male').toString();
+    _selectedGender =
+        genderFromBackend[0].toUpperCase() +
+        genderFromBackend.substring(1).toLowerCase();
   }
 
   @override
@@ -160,7 +167,11 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
                       ),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
-                        initialValue: _selectedAge,
+                        initialValue:
+                            (_selectedAge.isEmpty ||
+                                !_ages.contains(_selectedAge))
+                            ? 'Puppy'
+                            : _selectedAge,
                         items: _ages
                             .map(
                               (age) => DropdownMenuItem(
