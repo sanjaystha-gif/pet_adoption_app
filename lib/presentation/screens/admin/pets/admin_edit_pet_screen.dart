@@ -392,6 +392,11 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
       final petService = ref.read(petServiceProvider);
       final petId = widget.pet['id'] ?? widget.pet['_id'];
 
+      // ignore: avoid_print
+      print('🔍 Editing pet - ID: $petId');
+      // ignore: avoid_print
+      print('📝 Pet data: ${widget.pet}');
+
       if (petId == null) {
         throw Exception('Pet ID not found');
       }
@@ -433,10 +438,16 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
     } catch (e) {
       if (!mounted) return;
 
+      // ignore: avoid_print
+      print('❌ Error in _saveChanges: $e');
+      // ignore: avoid_print
+      print('📋 Stack trace: ${StackTrace.current}');
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error updating pet: $e'),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
         ),
       );
     } finally {

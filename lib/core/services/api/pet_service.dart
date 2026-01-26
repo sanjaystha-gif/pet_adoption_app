@@ -210,16 +210,34 @@ class PetService {
       }
       if (status != null) data['status'] = status;
 
+      // ignore: avoid_print
+      print('🔍 Updating pet $petId with data: $data');
+
       final response = await _apiService.putAuth(
         '$_itemsEndpoint/$petId',
         data: data,
       );
 
-      if (response.statusCode == 200) {
-        final petModel = PetModel.fromJson(
-          response.data['data'] ?? response.data,
-        );
-        return petModel.toEntity();
+      // ignore: avoid_print
+      print('✅ Pet update response: ${response.statusCode}');
+      // ignore: avoid_print
+      print('📦 Response data: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        try {
+          final responseData = response.data['data'] ?? response.data;
+          // ignore: avoid_print
+          print('🔄 Parsing response: $responseData');
+
+          final petModel = PetModel.fromJson(responseData);
+          // ignore: avoid_print
+          print('✅ Successfully parsed pet model: ${petModel.name}');
+          return petModel.toEntity();
+        } catch (parseError) {
+          // ignore: avoid_print
+          print('❌ Parse error: $parseError');
+          rethrow;
+        }
       }
 
       throw ApiFailure(
@@ -229,6 +247,8 @@ class PetService {
     } on ApiFailure {
       rethrow;
     } catch (e) {
+      // ignore: avoid_print
+      print('❌ Pet update error: $e');
       throw ApiFailure(message: 'Update pet error: ${e.toString()}');
     }
   }
