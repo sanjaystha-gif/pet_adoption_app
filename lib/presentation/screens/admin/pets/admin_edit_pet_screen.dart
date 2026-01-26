@@ -35,7 +35,9 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
     _descriptionController = TextEditingController(
       text: widget.pet['description'] ?? '',
     );
-    _selectedAge = widget.pet['age'] ?? 'Puppy';
+    // Convert numeric age to category string
+    final petAge = widget.pet['age'];
+    _selectedAge = _getCategoryFromAge(petAge is int ? petAge : int.tryParse(petAge.toString()) ?? 0);
     _selectedGender = widget.pet['gender'] ?? 'Male';
   }
 
@@ -455,6 +457,14 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  /// Convert numeric age to age category
+  String _getCategoryFromAge(int age) {
+    if (age <= 1) return 'Puppy';
+    if (age <= 3) return 'Young';
+    if (age <= 5) return 'Adult';
+    return 'Senior';
   }
 
   /// Convert age category to numeric age
