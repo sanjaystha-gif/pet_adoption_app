@@ -79,7 +79,37 @@ class AdminBookingRequestsScreen extends ConsumerWidget {
             valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF67D2C)),
           ),
         ),
-        error: (error, stackTrace) => Center(child: Text('Error: $error')),
+        error: (error, stackTrace) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error, size: 64, color: Colors.red[400]),
+              const SizedBox(height: 16),
+              Text(
+                'Error loading bookings',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                child: Text(
+                  '$error',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: Colors.red[600]),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.invalidate(adminBookingsProvider),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

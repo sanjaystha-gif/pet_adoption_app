@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pet_adoption_app/presentation/providers/booking_provider.dart';
 
-class BookingFormScreen extends StatefulWidget {
+class BookingFormScreen extends ConsumerStatefulWidget {
   final dynamic pet; // Can be Map or PetModel/PetEntity
 
   const BookingFormScreen({super.key, required this.pet});
 
   @override
-  State<BookingFormScreen> createState() => _BookingFormScreenState();
+  ConsumerState<BookingFormScreen> createState() => _BookingFormScreenState();
 }
 
-class _BookingFormScreenState extends State<BookingFormScreen> {
+class _BookingFormScreenState extends ConsumerState<BookingFormScreen> {
+  static const Color orange = Color(0xFFF67D2C);
+
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -44,10 +48,16 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
     super.dispose();
   }
 
+  bool _validate() {
+    return _nameController.text.isNotEmpty &&
+        _emailController.text.isNotEmpty &&
+        _phoneController.text.isNotEmpty &&
+        _addressController.text.isNotEmpty &&
+        _reasonController.text.isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
-    const orange = Color(0xFFF67D2C);
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -270,14 +280,93 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: _agreeToTerms
-                    ? () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Adoption request submitted!'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                        Navigator.pop(context);
+                    ? () async {
+                        final isSubmitting = _validate();
+                        if (!isSubmitting) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please fill in all fields'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                          return;
+                        }
+
+                        // Show loading indicator
+                        if (mounted) {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (_) => const Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation(orange),
+                              ),
+                            ),
+                          );
+                        }
+
+                        try {
+                          // Get pet details - handle both Map and Object types
+                          String petId = '';
+                          String petName = '';
+                          String petImageUrl = '';
+
+                          if (widget.pet is Map) {
+                            petId = widget.pet['_id'] ?? widget.pet['id'] ?? '';
+                            petName = widget.pet['name'] ?? '';
+                            petImageUrl =
+                                widget.pet['imageUrl'] ??
+                                widget.pet['photos']?[0] ??
+                                'main_logo.png';
+                          } else {
+                            petId = widget.pet.id ?? '';
+                            petName = widget.pet.name ?? '';
+                            petImageUrl =
+                                widget.pet.imageUrl ?? 'main_logo.png';
+                          }
+
+                          final bookingService = ref.read(
+                            bookingServiceProvider,
+                          );
+
+                          // Submit booking - using dummy userId, should come from auth in real app
+                          await bookingService.createBooking(
+                            userId: 'user123',
+                            petId: petId,
+                            petName: petName,
+                            petImageUrl: petImageUrl,
+                            userName: _nameController.text.trim(),
+                            userEmail: _emailController.text.trim(),
+                            userPhone: _phoneController.text.trim(),
+                            address: _addressController.text.trim(),
+                            reason: _reasonController.text.trim(),
+                          );
+
+                          if (mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Adoption request submitted successfully!',
+                                ),
+                                backgroundColor: Colors.green,
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
                       }
                     : null,
                 style: ElevatedButton.styleFrom(

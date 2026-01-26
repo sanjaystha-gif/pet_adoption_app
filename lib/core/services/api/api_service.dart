@@ -83,11 +83,15 @@ class ApiService {
     return InterceptorsWrapper(
       onRequest: (options, handler) async {
         final token = await getStoredToken();
+        // ignore: avoid_print
+        print('🔐 Auth Interceptor - Token found: ${token != null}');
         if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
-          // Token added to request
+          // ignore: avoid_print
+          print('🔐 Auth Interceptor - Token added to headers');
         } else {
-          // NO TOKEN FOUND - Request will fail if endpoint requires auth
+          // ignore: avoid_print
+          print('🔐 Auth Interceptor - NO TOKEN FOUND');
         }
         return handler.next(options);
       },
@@ -189,6 +193,8 @@ class ApiService {
     }
   }
 
+  /// Get the authenticated Dio instance with auth interceptor
+  Dio get dio => _dioWithAuth;
   // ==================== HTTP METHODS ====================
 
   /// Perform POST request (Public - No Auth)

@@ -1,12 +1,13 @@
+// import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'package:pet_adoption_app/core/services/api/api_service.dart';
 import 'package:pet_adoption_app/core/services/api/booking_service.dart';
 import 'package:pet_adoption_app/data/models/booking_model.dart';
-import 'package:pet_adoption_app/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'package:pet_adoption_app/presentation/providers/api_providers.dart';
 
 final bookingServiceProvider = Provider<BookingService>((ref) {
-  final apiClient = ref.watch(apiClientProvider);
-  return BookingService(apiClient.dio);
+  final apiService = ref.watch(apiServiceProvider);
+  return BookingService(apiService.dio);
 });
 
 final userBookingsProvider = FutureProvider<List<BookingModel>>((ref) async {
@@ -24,9 +25,13 @@ final userBookingsProvider = FutureProvider<List<BookingModel>>((ref) async {
 final adminBookingsProvider = FutureProvider<List<BookingModel>>((ref) async {
   final bookingService = ref.watch(bookingServiceProvider);
   try {
-    return await bookingService.getAllBookings();
+    final bookings = await bookingService.getAllBookings();
+    return bookings;
   } catch (e) {
-    return [];
+    // Debug: Print the actual error
+    // ignore: avoid_print
+    print('Error fetching admin bookings: $e');
+    rethrow;
   }
 });
 

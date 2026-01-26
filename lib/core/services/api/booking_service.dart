@@ -15,6 +15,8 @@ class BookingService {
     required String petId,
     required String petName,
     required String petImageUrl,
+    String? address,
+    String? reason,
   }) async {
     try {
       final response = await dio.post(
@@ -24,9 +26,11 @@ class BookingService {
           'userName': userName,
           'userEmail': userEmail,
           'userPhone': userPhone,
+          'address': address,
           'petId': petId,
           'petName': petName,
           'petImageUrl': petImageUrl,
+          'reason': reason,
           'status': 'pending',
         },
       );
@@ -64,11 +68,20 @@ class BookingService {
   Future<List<BookingModel>> getAllBookings({String? status}) async {
     try {
       final params = status != null ? {'status': status} : null;
+      // ignore: avoid_print
+      print('🔍 Fetching bookings from /bookings/all with params: $params');
       final response = await dio.get('/bookings/all', queryParameters: params);
+
+      // ignore: avoid_print
+      print('✅ Response status: ${response.statusCode}');
+      // ignore: avoid_print
+      print('📦 Response data: ${response.data}');
 
       if (response.statusCode == 200) {
         final List<dynamic> bookingsList =
             response.data['data'] ?? response.data;
+        // ignore: avoid_print
+        print('📝 Parsed ${bookingsList.length} bookings');
         return bookingsList
             .map((booking) => BookingModel.fromJson(booking))
             .toList();
@@ -76,6 +89,12 @@ class BookingService {
         throw Exception('Failed to fetch bookings');
       }
     } on DioException catch (e) {
+      // ignore: avoid_print
+      print('❌ DioException: ${e.message}');
+      // ignore: avoid_print
+      print('Status Code: ${e.response?.statusCode}');
+      // ignore: avoid_print
+      print('Response Data: ${e.response?.data}');
       throw Exception('Fetch bookings error: ${e.message}');
     }
   }
