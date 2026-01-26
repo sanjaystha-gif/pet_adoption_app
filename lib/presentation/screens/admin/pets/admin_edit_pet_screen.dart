@@ -37,7 +37,9 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
     );
     // Convert numeric age to category string
     final petAge = widget.pet['age'];
-    _selectedAge = _getCategoryFromAge(petAge is int ? petAge : int.tryParse(petAge.toString()) ?? 0);
+    _selectedAge = _getCategoryFromAge(
+      petAge is int ? petAge : int.tryParse(petAge.toString()) ?? 0,
+    );
     _selectedGender = widget.pet['gender'] ?? 'Male';
   }
 
@@ -461,10 +463,23 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
 
   /// Convert numeric age to age category
   String _getCategoryFromAge(int age) {
-    if (age <= 1) return 'Puppy';
-    if (age <= 3) return 'Young';
-    if (age <= 5) return 'Adult';
-    return 'Senior';
+    // Match the exact ages returned by backend
+    switch (age) {
+      case 1:
+        return 'Puppy';
+      case 3:
+        return 'Young';
+      case 5:
+        return 'Adult';
+      case 10:
+        return 'Senior';
+      default:
+        // If age doesn't match exactly, find closest match
+        if (age <= 1) return 'Puppy';
+        if (age <= 3) return 'Young';
+        if (age <= 5) return 'Adult';
+        return 'Senior';
+    }
   }
 
   /// Convert age category to numeric age
