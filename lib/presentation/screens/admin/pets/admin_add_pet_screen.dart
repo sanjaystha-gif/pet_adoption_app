@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:pet_adoption_app/core/services/permission/permission_service.dart';
+import 'package:pet_adoption_app/presentation/providers/api_providers.dart';
 import 'dart:io';
 import 'package:pet_adoption_app/presentation/providers/pet_provider.dart';
-import 'package:pet_adoption_app/presentation/providers/api_providers.dart';
 
 class AdminAddPetScreen extends ConsumerStatefulWidget {
   const AdminAddPetScreen({super.key});
@@ -14,8 +15,8 @@ class AdminAddPetScreen extends ConsumerStatefulWidget {
 
 class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
   final _nameController = TextEditingController();
-  final _breedController = TextEditingController();
   final _descriptionController = TextEditingController();
+  String _selectedBreed = 'Golden Retriever';
   String _selectedAge = 'Puppy';
   String _selectedGender = 'Male';
   bool _isLoading = false;
@@ -24,11 +25,31 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
 
   final List<String> _ages = ['Puppy', 'Young', 'Adult', 'Senior'];
   final List<String> _genders = ['Male', 'Female'];
+  final List<String> _breeds = [
+    'Golden Retriever',
+    'Labrador Retriever',
+    'German Shepherd',
+    'Bulldog',
+    'Beagle',
+    'Poodle',
+    'Rottweiler',
+    'Yorkshire Terrier',
+    'Boxer',
+    'Dachshund',
+    'Siberian Husky',
+    'Shih Tzu',
+    'Doberman',
+    'Chihuahua',
+    'Pomeranian',
+    'Corgi',
+    'Pug',
+    'Mixed Breed',
+    'Other',
+  ];
 
   @override
   void dispose() {
     _nameController.dispose();
-    _breedController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -38,21 +59,21 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
     const orange = Color(0xFFF67D2C);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF7F7F8),
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0,
+        elevation: 0.5,
         title: const Text(
           'Add New Pet',
           style: TextStyle(
             color: Colors.black,
-            fontSize: 20,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
             fontFamily: 'Afacad',
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -61,250 +82,271 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Pet Name
-            Text(
-              'Pet Name',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Afacad',
+            // Image Upload Card
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                hintText: 'Enter pet name',
-                hintStyle: TextStyle(
-                  color: Colors.grey[400],
-                  fontFamily: 'Afacad',
-                ),
-                filled: true,
-                fillColor: Colors.grey[50],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Breed
-            Text(
-              'Breed',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Afacad',
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _breedController,
-              decoration: InputDecoration(
-                hintText: 'Enter breed',
-                hintStyle: TextStyle(
-                  color: Colors.grey[400],
-                  fontFamily: 'Afacad',
-                ),
-                filled: true,
-                fillColor: Colors.grey[50],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Age and Gender Row
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Age',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Afacad',
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        initialValue: _selectedAge,
-                        items: _ages
-                            .map(
-                              (age) => DropdownMenuItem(
-                                value: age,
-                                child: Text(age),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => _selectedAge = value);
-                          }
-                        },
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Gender',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Afacad',
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        initialValue: _selectedGender,
-                        items: _genders
-                            .map(
-                              (gender) => DropdownMenuItem(
-                                value: gender,
-                                child: Text(gender),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => _selectedGender = value);
-                          }
-                        },
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Description
-            Text(
-              'Description',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Afacad',
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _descriptionController,
-              maxLines: 4,
-              decoration: InputDecoration(
-                hintText: 'Enter pet description',
-                hintStyle: TextStyle(
-                  color: Colors.grey[400],
-                  fontFamily: 'Afacad',
-                ),
-                filled: true,
-                fillColor: Colors.grey[50],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Pet Image
-            Text(
-              'Pet Image',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Afacad',
-              ),
-            ),
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: _pickImage,
               child: Container(
-                width: double.infinity,
-                height: 150,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!, width: 2),
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.grey[50],
-                ),
-                child: _selectedImage != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.file(_selectedImage!, fit: BoxFit.cover),
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.cloud_upload_outlined,
-                            size: 48,
-                            color: Colors.grey[400],
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.photo_camera, color: orange, size: 20),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Pet Photo',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Afacad',
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Tap to upload pet image',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontFamily: 'Afacad',
-                            ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    GestureDetector(
+                      onTap: _pickImage,
+                      child: Container(
+                        width: double.infinity,
+                        height: 200,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: orange.withOpacity(0.3),
+                            width: 2,
+                            style: BorderStyle.solid,
                           ),
-                          Text(
-                            'Default profile icon will be used if not provided',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                              fontFamily: 'Afacad',
-                            ),
-                          ),
-                        ],
+                          borderRadius: BorderRadius.circular(12),
+                          color: orange.withOpacity(0.05),
+                        ),
+                        child: _selectedImage != null
+                            ? Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Image.file(
+                                      _selectedImage!,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.black54,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: IconButton(
+                                        icon: const Icon(
+                                          Icons.edit,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                        onPressed: _pickImage,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.add_photo_alternate_outlined,
+                                    size: 64,
+                                    color: orange,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Tap to upload pet photo',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[700],
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: 'Afacad',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Recommended: Square image, min 500x500px',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[500],
+                                      fontFamily: 'Afacad',
+                                    ),
+                                  ),
+                                ],
+                              ),
                       ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Pet Details Card
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.pets, color: orange, size: 20),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Pet Information',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Afacad',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Pet Name
+                    _buildLabel('Pet Name', Icons.badge),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _nameController,
+                      decoration: _buildInputDecoration(
+                        'e.g., Max, Bella, Charlie',
+                      ),
+                      style: const TextStyle(fontFamily: 'Afacad'),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Breed Dropdown
+                    _buildLabel('Breed', Icons.category),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      value: _selectedBreed,
+                      items: _breeds
+                          .map(
+                            (breed) => DropdownMenuItem(
+                              value: breed,
+                              child: Text(
+                                breed,
+                                style: const TextStyle(fontFamily: 'Afacad'),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => _selectedBreed = value);
+                        }
+                      },
+                      decoration: _buildInputDecoration('Select breed'),
+                      icon: Icon(Icons.arrow_drop_down, color: orange),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Age and Gender Row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel('Age', Icons.cake),
+                              const SizedBox(height: 8),
+                              DropdownButtonFormField<String>(
+                                value: _selectedAge,
+                                items: _ages
+                                    .map(
+                                      (age) => DropdownMenuItem(
+                                        value: age,
+                                        child: Text(
+                                          age,
+                                          style: const TextStyle(
+                                            fontFamily: 'Afacad',
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    setState(() => _selectedAge = value);
+                                  }
+                                },
+                                decoration: _buildInputDecoration('Select'),
+                                icon: Icon(
+                                  Icons.arrow_drop_down,
+                                  color: orange,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel('Gender', Icons.male),
+                              const SizedBox(height: 8),
+                              DropdownButtonFormField<String>(
+                                value: _selectedGender,
+                                items: _genders
+                                    .map(
+                                      (gender) => DropdownMenuItem(
+                                        value: gender,
+                                        child: Text(
+                                          gender,
+                                          style: const TextStyle(
+                                            fontFamily: 'Afacad',
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    setState(() => _selectedGender = value);
+                                  }
+                                },
+                                decoration: _buildInputDecoration('Select'),
+                                icon: Icon(
+                                  Icons.arrow_drop_down,
+                                  color: orange,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Description
+                    _buildLabel('Description', Icons.description),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _descriptionController,
+                      maxLines: 4,
+                      decoration: _buildInputDecoration(
+                        'Tell us about this pet\'s personality, habits, or special needs...',
+                      ),
+                      style: const TextStyle(fontFamily: 'Afacad'),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -312,43 +354,109 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
             // Save Button
             SizedBox(
               width: double.infinity,
+              height: 54,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _addPetToBackend,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: orange,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  elevation: 3,
+                  shadowColor: orange.withOpacity(0.4),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: _isLoading
                     ? const SizedBox(
-                        height: 20,
-                        width: 20,
+                        height: 24,
+                        width: 24,
                         child: CircularProgressIndicator(
                           color: Colors.white,
-                          strokeWidth: 2,
+                          strokeWidth: 2.5,
                         ),
                       )
-                    : const Text(
-                        'Add Pet',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Afacad',
-                        ),
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.check_circle_outline, size: 22),
+                          SizedBox(width: 8),
+                          Text(
+                            'Add Pet to Database',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Afacad',
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
                       ),
               ),
             ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
 
+  Widget _buildLabel(String text, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.grey[600]),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[800],
+            fontFamily: 'Afacad',
+          ),
+        ),
+      ],
+    );
+  }
+
+  InputDecoration _buildInputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(
+        color: Colors.grey[400],
+        fontFamily: 'Afacad',
+        fontSize: 14,
+      ),
+      filled: true,
+      fillColor: Colors.grey[50],
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey[300]!),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey[300]!),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFF67D2C), width: 2),
+      ),
+    );
+  }
+
   Future<void> _pickImage() async {
     try {
+      final status = await PermissionService.requestPhotos();
+      if (!PermissionService.isGranted(status)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Photo permission required'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       final pickedFile = await _imagePicker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 80,
@@ -387,6 +495,14 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
     try {
       final petService = ref.read(petServiceProvider);
 
+      // If there's a selected image, upload it first
+      String mediaUrlToSend = 'main_logo.png';
+      if (_selectedImage != null) {
+        mediaUrlToSend = await ref.read(
+          uploadPhotoProvider(_selectedImage!.path).future,
+        );
+      }
+
       // Create pet with backend API
       await petService.createPet(
         name: _nameController.text,
@@ -394,11 +510,9 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
         type: 'available',
         categoryId: '6973651cd96b87a44687ca13', // Dogs category ID
         location: 'Kathmandu',
-        mediaUrl:
-            _selectedImage?.path ??
-            'profile.jpg', // Use selected image or default profile
+        mediaUrl: mediaUrlToSend,
         mediaType: 'photo',
-        breed: _breedController.text,
+        breed: _selectedBreed,
         age: _getAgeFromCategory(_selectedAge), // Convert category to age
         gender: _selectedGender,
         size: 'medium',
@@ -406,10 +520,10 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
         userId: 'admin', // Will be replaced by actual admin ID from auth
       );
 
-      // Invalidate cache to refresh pet list
-      ref.invalidate(allPetsProvider);
-      ref.invalidate(adminUpdatedPetsProvider);
+      // Refresh ALL pet providers so both admin and user views update
+      ref.invalidate(adminPetsNotifierProvider);
       ref.invalidate(userPetsProvider);
+      ref.invalidate(petApiClientProvider);
 
       if (!mounted) return;
 

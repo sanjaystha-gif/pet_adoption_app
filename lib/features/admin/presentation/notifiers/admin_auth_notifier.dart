@@ -56,8 +56,34 @@ class AdminAuthNotifier {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final token = response.data['token'] ?? response.data['accessToken'];
-        if (token == null) {
+        print('🔍 ADMIN LOGIN RESPONSE STATUS: ${response.statusCode}');
+        print('🔍 ADMIN LOGIN RESPONSE DATA: ${response.data}');
+        // Robust token extraction: API may return token as a Map or String
+        dynamic tokenRaw =
+            response.data['token'] ??
+            response.data['accessToken'] ??
+            response.data;
+        String? token;
+        if (tokenRaw is String) {
+          token = tokenRaw;
+        } else if (tokenRaw is Map) {
+          token =
+              tokenRaw['token'] ??
+              tokenRaw['accessToken'] ??
+              tokenRaw.values.firstWhere((v) => v is String, orElse: () => null)
+                  as String?;
+        } else {
+          token = tokenRaw?.toString();
+        }
+
+        print('🔍 EXTRACTED ADMIN TOKEN: ${token != null}');
+        if (token != null && token.isNotEmpty) {
+          print(
+            '🔐 ADMIN TOKEN (truncated): ${token.substring(0, (token.length > 20) ? 20 : token.length)}...',
+          );
+        }
+
+        if (token == null || token.isEmpty) {
           return AdminAuthState(
             isLoading: false,
             error: 'No token in response from server',
@@ -67,17 +93,20 @@ class AdminAuthNotifier {
         final userData =
             response.data['adopter'] ?? response.data['user'] ?? response.data;
         if (userData == null || userData is! Map) {
+          print('❌ ADMIN LOGIN: Invalid user object in response');
           return AdminAuthState(
             isLoading: false,
             error: 'Invalid user data in response',
           );
         }
 
+        print('🔍 ADMIN LOGIN: userData keys: ${userData.keys.toList()}');
         // Check if user is admin
         final isAdmin =
             userData['role'] == 'admin' ||
             userData['isAdmin'] == true ||
             userData['admin'] == true;
+        print('🔍 ADMIN FLAG DETERMINED: $isAdmin');
 
         if (!isAdmin) {
           return AdminAuthState(
@@ -93,13 +122,28 @@ class AdminAuthNotifier {
         await apiService.saveToken(token);
 
         // Create user entity
+        // Normalize address field (server may return Map or String)
+        final dynamic rawAddress = userData['address'];
+        String addressStr;
+        if (rawAddress == null) {
+          addressStr = '';
+        } else if (rawAddress is String) {
+          addressStr = rawAddress;
+        } else if (rawAddress is Map) {
+          addressStr =
+              (rawAddress['address'] ?? rawAddress['fullAddress'] ?? '')
+                  .toString();
+        } else {
+          addressStr = rawAddress.toString();
+        }
+
         final user = AuthEntity(
           authId: userData['id'] ?? userData['_id'] ?? 'unknown',
           firstName: userData['firstName'] ?? userData['first_name'] ?? '',
           lastName: userData['lastName'] ?? userData['last_name'] ?? '',
           email: userData['email'] ?? email ?? '',
           phoneNumber: userData['phoneNumber'] ?? userData['phone_number'],
-          address: userData['address'] ?? '',
+          address: addressStr,
         );
 
         // Save user data to Hive
@@ -109,7 +153,7 @@ class AdminAuthNotifier {
           lastName: user.lastName,
           email: user.email,
           phoneNumber: user.phoneNumber,
-          address: user.address ?? '',
+          address: addressStr,
         );
         await hiveService.saveAuthData(hiveModel);
 

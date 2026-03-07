@@ -146,7 +146,9 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                     if (_emailError.isEmpty && _passwordError.isEmpty) {
                       // Show loading indicator
                       if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      final messenger = ScaffoldMessenger.of(context);
+                      final navigator = Navigator.of(context);
+                      messenger.showSnackBar(
                         const SnackBar(content: Text('Logging in as admin...')),
                       );
 
@@ -162,15 +164,15 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                       if (!mounted) return;
 
                       if (result.isAdmin && result.isAuthenticated) {
-                        // Navigate to AdminDashboardScreen
-                        Navigator.of(context).pushReplacement(
+                        // Navigate to AdminDashboardScreen using captured navigator
+                        navigator.pushReplacement(
                           MaterialPageRoute(
                             builder: (_) => const AdminDashboardScreen(),
                           ),
                         );
                       } else {
-                        // Show error
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        // Show error via captured messenger
+                        messenger.showSnackBar(
                           SnackBar(
                             content: Text(result.error ?? 'Admin login failed'),
                             backgroundColor: Colors.red,

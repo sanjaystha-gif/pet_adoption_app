@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pet_adoption_app/features/admin/domain/providers/pet_provider.dart';
 import 'package:pet_adoption_app/features/admin/presentation/providers/admin_auth_provider.dart';
 import 'package:pet_adoption_app/presentation/screens/admin/pets/admin_pets_list_screen.dart';
 import 'package:pet_adoption_app/presentation/screens/admin/bookings/admin_booking_requests_screen.dart';
@@ -56,17 +55,21 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               // Show logout confirmation
               showDialog(
                 context: context,
-                builder: (context) => AlertDialog(
+                builder: (dialogContext) => AlertDialog(
                   title: const Text('Logout'),
                   content: const Text('Are you sure you want to logout?'),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => Navigator.pop(dialogContext),
                       child: const Text('Cancel'),
                     ),
                     TextButton(
                       onPressed: () async {
-                        Navigator.pop(context);
+                        // Close the dialog using its context
+                        Navigator.pop(dialogContext);
+
+                        // Capture navigator using outer context before awaiting
+                        final navigator = Navigator.of(context);
 
                         // Logout
                         final adminAuthNotifier = ref.read(
@@ -76,11 +79,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
                         if (!mounted) return;
 
-                        // Clear pets when logging out
-                        ref.read(petListProvider.notifier).clearPets();
-
-                        // Navigate back to login
-                        Navigator.of(context).pushReplacement(
+                        // Navigate back to login using the captured navigator
+                        navigator.pushReplacement(
                           MaterialPageRoute(
                             builder: (_) => const GetstartedScreen(),
                           ),
@@ -100,18 +100,44 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         ],
       ),
       body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onTabChange,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.pets), label: 'Pets'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_long),
-            label: 'Bookings',
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFFF0F0F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: NavigationBar(
+            selectedIndex: _selectedIndex,
+            onDestinationSelected: _onTabChange,
+            height: 70,
+            elevation: 0,
+            backgroundColor: Colors.white,
+            indicatorColor: const Color(0xFFF67D2C).withValues(alpha: 0.2),
+            labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.pets_outlined),
+                selectedIcon: Icon(Icons.pets),
+                label: 'Pets',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.receipt_long_outlined),
+                selectedIcon: Icon(Icons.receipt_long),
+                label: 'Bookings',
+              ),
+            ],
           ),
-        ],
-        selectedItemColor: const Color(0xFFF67D2C),
-        unselectedItemColor: Colors.grey,
+        ),
       ),
     );
   }

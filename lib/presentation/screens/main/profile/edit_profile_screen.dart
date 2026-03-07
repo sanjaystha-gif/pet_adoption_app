@@ -1,22 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pet_adoption_app/presentation/providers/user_provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:pet_adoption_app/core/services/permission/permission_service.dart';
+import 'package:pet_adoption_app/presentation/providers/api_providers.dart';
+import 'package:pet_adoption_app/features/auth/presentation/notifiers/auth_notifier.dart';
+import 'package:pet_adoption_app/core/services/hive/hive_service.dart';
+import 'package:pet_adoption_app/core/constants/hive_table_constant.dart';
+import 'package:pet_adoption_app/features/auth/data/models/auth_hive_model.dart';
 
-class EditProfileScreen extends StatefulWidget {
+class EditProfileScreen extends ConsumerStatefulWidget {
   final UserProvider userProvider;
 
   const EditProfileScreen({super.key, required this.userProvider});
 
   @override
-  State<EditProfileScreen> createState() => _EditProfileScreenState();
+  ConsumerState<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditProfileScreenState extends State<EditProfileScreen> {
+class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late TextEditingController _firstNameController;
   late TextEditingController _lastNameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
   late TextEditingController _addressController;
   late TextEditingController _bioController;
+  File? _selectedImage;
+  String? _profileImagePath;
+  bool _imageUpdated = false;
 
   @override
   void initState() {
@@ -37,6 +49,147 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       text: widget.userProvider.user.address,
     );
     _bioController = TextEditingController(text: widget.userProvider.user.bio);
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    try {
+      final hive = HiveService();
+      final hiveUser = await hive.getAuthData();
+      debugPrint('EditProfile: Loading image, hiveUser exists: ${hiveUser != null}');
+      debugPrint('EditProfile: authId = ${hiveUser?.authId}');
+      
+      // Try active user's profile picture first (fallback key)
+      var pic = await hive.getProfilePicture(HiveTableConstant.userTable);
+      
+      // If not found and we have a specific authId, try that
+      if (pic == null) {
+        final userId = hiveUser?.authId;
+        if (userId != null && userId.isNotEmpty && userId != 'unknown') {
+          pic = await hive.getProfilePicture(userId);
+        }
+      }
+      
+      if (mounted && pic != null) {
+        debugPrint('EditProfile: Setting profile image: $pic');
+        setState(() => _profileImagePath = pic);
+      } else {
+        debugPrint('EditProfile: No profile image found');
+      }
+    } catch (e) {
+      debugPrint('EditProfile: Error loading profile image: $e');
+    }
+  }
+
+  Future<void> _handlePickedFile(File file) async {
+    setState(() => _selectedImage = file);
+
+    try {
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(const SnackBar(content: Text('Uploading...')));
+
+      debugPrint('EditProfile: Starting upload for file: ${file.path}');
+      final uploadedUrl = await ref.read(
+        uploadProfilePictureProvider(file.path).future,
+      );
+      debugPrint('EditProfile: Upload successful, URL: $uploadedUrl');
+
+      final hive = HiveService();
+      final hiveUser = await hive.getAuthData();
+      final authNotifier = ref.read(authNotifierProvider);
+      final userId = hiveUser?.authId;
+      
+      debugPrint('EditProfile: Saving picture, userId: $userId');
+
+      // Always save under the active user key for immediate access
+      await hive.saveProfilePicture(HiveTableConstant.userTable, uploadedUrl);
+      
+      // Also save under specific userId if it's valid
+      if (userId != null && userId.isNotEmpty && userId != 'unknown') {
+        await hive.saveProfilePicture(userId, uploadedUrl);
+        await authNotifier.updateUserProfile(
+          userId: userId,
+          profilePicture: uploadedUrl,
+        );
+        debugPrint('EditProfile: Updated backend profile with userId: $userId');
+      }
+
+      if (mounted) {
+        setState(() {
+          _profileImagePath = uploadedUrl;
+          _selectedImage = null;
+          _imageUpdated = true;
+        });
+        debugPrint('EditProfile: UI updated with new image');
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile picture updated!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error uploading: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    if (source == ImageSource.camera) {
+      final status = await PermissionService.requestCamera();
+      if (!PermissionService.isGranted(status)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Camera permission is required'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    } else {
+      final status = await PermissionService.requestPhotos();
+      if (!PermissionService.isGranted(status)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Photo permission is required'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: source,
+        imageQuality: 80,
+      );
+      if (image != null) {
+        await _handlePickedFile(File(image.path));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -58,7 +211,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context, _imageUpdated),
         ),
         title: const Text(
           'Edit Profile',
@@ -78,39 +231,114 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           children: [
             // Profile Picture Section
             Center(
-              child: Stack(
-                children: [
-                  ClipOval(
-                    child: Image.asset(
-                      'assets/images/profile.jpg',
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Image.asset(
-                        'assets/images/main_logo.png',
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.cover,
+              child: GestureDetector(
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    builder: (sheetCtx) {
+                      return SafeArea(
+                        child: Wrap(
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.camera_alt),
+                              title: const Text('Take Photo'),
+                              onTap: () async {
+                                Navigator.pop(sheetCtx);
+                                await _pickImage(ImageSource.camera);
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.photo_library),
+                              title: const Text('Choose from Gallery'),
+                              onTap: () async {
+                                Navigator.pop(sheetCtx);
+                                await _pickImage(ImageSource.gallery);
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+                child: Stack(
+                  children: [
+                    ClipOval(
+                      child: Builder(
+                        builder: (_) {
+                          if (_selectedImage != null) {
+                            return Image.file(
+                              _selectedImage!,
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            );
+                          }
+
+                          if (_profileImagePath != null &&
+                              _profileImagePath!.isNotEmpty) {
+                            if (_profileImagePath!.startsWith('http')) {
+                              return Image.network(
+                                _profileImagePath!,
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Image.asset(
+                                  'assets/images/main_logo.png',
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                              );
+                            }
+
+                            try {
+                              final f = File(_profileImagePath!);
+                              if (f.existsSync()) {
+                                return Image.file(
+                                  f,
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                );
+                              }
+                            } catch (_) {}
+                          }
+
+                          return Image.asset(
+                            'assets/images/profile.jpg',
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Image.asset(
+                                  'assets/images/main_logo.png',
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                          );
+                        },
                       ),
                     ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF67D2C),
-                        shape: BoxShape.circle,
-                      ),
-                      padding: const EdgeInsets.all(8),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        color: Colors.white,
-                        size: 20,
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF67D2C),
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(8),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 32),
@@ -160,25 +388,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // Update user profile in provider
-                  widget.userProvider.updateProfile(
-                    firstName: _firstNameController.text,
-                    lastName: _lastNameController.text,
-                    email: _emailController.text,
-                    phone: _phoneController.text,
-                    address: _addressController.text,
-                    bio: _bioController.text,
-                  );
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Profile updated successfully!'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                  Navigator.pop(context);
-                },
+                onPressed: () => _saveProfile(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFF67D2C),
                   foregroundColor: Colors.white,
@@ -202,6 +412,96 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _saveProfile() async {
+    try {
+      // Get HiveService to update local storage
+      final hiveService = HiveService();
+
+      // Get current user from Hive to get the authId
+      final currentHiveUser = await hiveService.getAuthData();
+      if (currentHiveUser == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Error: User data not found'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Show loading indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Saving profile...'),
+            duration: Duration(seconds: 30),
+          ),
+        );
+      }
+
+      // Make API call to update profile
+      final authNotifier = ref.read(authNotifierProvider);
+      final firstName = _firstNameController.text.trim();
+      final lastName = _lastNameController.text.trim();
+      final email = _emailController.text.trim();
+      final phoneNumber = _phoneController.text.trim();
+      final address = _addressController.text.trim();
+
+      // Call backend API to update user profile
+      await authNotifier.updateUserProfile(
+        userId: currentHiveUser.authId ?? 'unknown',
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        phoneNumber: phoneNumber,
+        address: address,
+      );
+
+      // Update Hive storage with new data
+      final updatedHiveModel = AuthHiveModel(
+        authId: currentHiveUser.authId,
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        phoneNumber: phoneNumber,
+        address: address,
+      );
+      await hiveService.saveAuthData(updatedHiveModel);
+
+      // Update UserProvider with new data
+      widget.userProvider.updateProfile(
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        phone: phoneNumber,
+        address: address,
+        bio: _bioController.text,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile updated successfully!'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating profile: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildTextFormField({

@@ -23,7 +23,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void initState() {
     super.initState();
     _screens = [
-      const HomePageScreen(),
+      HomePageScreen(userProvider: widget.userProvider),
       const SearchScreen(),
       const FavoritesScreen(),
       ProfileScreen(userProvider: widget.userProvider),
@@ -40,7 +40,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F8),
-      body: _screens[_selectedIndex],
+      body: IndexedStack(index: _selectedIndex, children: _screens),
       bottomNavigationBar: BottomNavigationBarWidget(
         accent: const Color(0xFFF67D2C),
         currentIndex: _selectedIndex,
@@ -53,7 +53,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 class BottomNavigationBarWidget extends StatelessWidget {
   final Color accent;
   final int currentIndex;
-  final Function(int) onTap;
+  final ValueChanged<int> onTap;
 
   const BottomNavigationBarWidget({
     super.key,
@@ -64,73 +64,59 @@ class BottomNavigationBarWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final items = <({IconData icon, String label})>[
+      (icon: Icons.home_rounded, label: 'Home'),
+      (icon: Icons.search_rounded, label: 'Search'),
+      (icon: Icons.favorite_rounded, label: 'Favorites'),
+      (icon: Icons.person_rounded, label: 'Profile'),
+    ];
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+      margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFF0F0F0)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
         ],
       ),
       child: SafeArea(
         top: false,
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _NavIcon(
-              icon: Icons.home,
-              active: currentIndex == 0,
-              accent: accent,
-              onPressed: () => onTap(0),
-            ),
-            _NavIcon(
-              icon: Icons.search,
-              active: currentIndex == 1,
-              accent: accent,
-              onPressed: () => onTap(1),
-            ),
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: accent,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: accent.withValues(alpha: 0.25),
-                    blurRadius: 8,
-                  ),
-                ],
+          children: List.generate(items.length, (index) {
+            final item = items[index];
+            return Expanded(
+              child: _NavItem(
+                icon: item.icon,
+                label: item.label,
+                active: currentIndex == index,
+                accent: accent,
+                onPressed: () => onTap(index),
               ),
-              child: IconButton(
-                onPressed: () => onTap(2),
-                icon: Icon(
-                  currentIndex == 2 ? Icons.favorite : Icons.favorite_border,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            _NavIcon(
-              icon: Icons.person_outline,
-              active: currentIndex == 3,
-              accent: accent,
-              onPressed: () => onTap(3),
-            ),
-          ],
+            );
+          }),
         ),
       ),
     );
   }
 }
 
-class _NavIcon extends StatelessWidget {
+class _NavItem extends StatelessWidget {
   final IconData icon;
+  final String label;
   final bool active;
   final Color accent;
   final VoidCallback onPressed;
 
-  const _NavIcon({
+  const _NavItem({
     required this.icon,
+    required this.label,
     required this.active,
     required this.accent,
     required this.onPressed,
@@ -138,9 +124,51 @@ class _NavIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      onPressed: onPressed,
-      icon: Icon(icon, color: active ? accent : Colors.grey[600]),
+    final inactiveColor = Colors.grey[600] ?? Colors.grey;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: active
+                ? LinearGradient(
+                    colors: [
+                      accent.withValues(alpha: 0.2),
+                      accent.withValues(alpha: 0.08),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: active ? accent : inactiveColor, size: 22),
+              const SizedBox(height: 2),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 220),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                  color: active ? accent : inactiveColor,
+                ),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

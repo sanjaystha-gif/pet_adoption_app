@@ -1,21 +1,35 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
 import 'package:pet_adoption_app/data/models/pet_model.dart';
-import 'package:pet_adoption_app/features/auth/presentation/notifiers/auth_notifier.dart';
+import 'package:pet_adoption_app/core/services/api/api_service.dart';
+import 'package:pet_adoption_app/presentation/providers/api_providers.dart';
 
 class PetApiClient {
-  final Dio dio;
+  final ApiService apiService;
 
-  PetApiClient(this.dio);
+  PetApiClient(this.apiService);
 
   Future<List<PetModel>> getAllPets() async {
     try {
-      final response = await dio.get('/items');
+      // Use the ApiService's Dio instance to get pets
+      final response = await apiService.dio.get('/items');
+
       if (response.statusCode == 200) {
         final List<dynamic> petsList =
             response.data['data'] ?? response.data ?? [];
-        return petsList.map((pet) => PetModel.fromJson(pet)).toList();
+
+        if (petsList.isNotEmpty) {}
+
+        final parsedPets = petsList.map((pet) {
+          try {
+            return PetModel.fromJson(pet as Map<String, dynamic>);
+          } catch (e) {
+            rethrow;
+          }
+        }).toList();
+
+        return parsedPets;
       }
+
       return [];
     } catch (e) {
       return [];
@@ -24,7 +38,7 @@ class PetApiClient {
 
   Future<PetModel> getPetById(String petId) async {
     try {
-      final response = await dio.get('/items/$petId');
+      final response = await apiService.dio.get('/items/$petId');
       if (response.statusCode == 200) {
         return PetModel.fromJson(response.data['data'] ?? response.data);
       }
@@ -47,11 +61,16 @@ class PetApiClient {
         if (type != null) 'type': type,
         if (category != null) 'category': category,
       };
-      final response = await dio.get('/items', queryParameters: params);
+      final response = await apiService.dio.get(
+        '/items',
+        queryParameters: params,
+      );
       if (response.statusCode == 200) {
         final List<dynamic> petsList =
             response.data['data'] ?? response.data ?? [];
-        return petsList.map((pet) => PetModel.fromJson(pet)).toList();
+        return petsList
+            .map((pet) => PetModel.fromJson(pet as Map<String, dynamic>))
+            .toList();
       }
       return [];
     } catch (e) {
@@ -61,9 +80,14 @@ class PetApiClient {
 }
 
 final petApiClientProvider = Provider<PetApiClient>((ref) {
-  final apiClient = ref.watch(apiClientProvider);
-  return PetApiClient(apiClient.dio);
+  // Use the shared ApiService instance from api_providers
+  final apiService = ref.watch(apiServiceProvider);
+  return PetApiClient(apiService);
 });
+
+// Use adminUpdatedPetsProvider as the main provider for admin pets
+// This will be used in the admin pets list screen
+final adminPetsNotifierProvider = adminUpdatedPetsProvider;
 
 final allPetsProvider = FutureProvider<List<PetModel>>((ref) async {
   final petApiClient = ref.watch(petApiClientProvider);
@@ -77,11 +101,13 @@ final allPetsProvider = FutureProvider<List<PetModel>>((ref) async {
 final adminUpdatedPetsProvider = FutureProvider<List<PetModel>>((ref) async {
   final petApiClient = ref.watch(petApiClientProvider);
   try {
+    // Get pets - will use cache if available
     final pets = await petApiClient.getAllPets();
-    return pets
-        .where((pet) => pet.postedBy == 'admin' || pet.postedByName == 'admin')
-        .toList();
+
+    // For admin: Show ALL pets (they manage all pets)
+    return pets;
   } catch (e) {
+    // Return empty list instead of rethrowing to prevent infinite loading
     return [];
   }
 });
@@ -90,10 +116,25 @@ final userPetsProvider = FutureProvider<List<PetModel>>((ref) async {
   final petApiClient = ref.watch(petApiClientProvider);
   try {
     final pets = await petApiClient.getAllPets();
-    return pets
-        .where((pet) => pet.postedBy == 'admin' || pet.postedByName == 'admin')
-        .toList();
+
+    print('🐾 DEBUG: Total pets from API: ${pets.length}');
+
+    // Show all available pets for adoption (no demo/seed data in DB anymore)
+    final filtered = pets.where((pet) {
+      final type = pet.type.trim().toLowerCase();
+      final isAvailable = type == 'available' && !pet.isAdopted;
+
+      print(
+        '🐾 Pet: ${pet.name} | Type: "${pet.type}" | isAdopted: ${pet.isAdopted} | Passes: $isAvailable',
+      );
+
+      return isAvailable;
+    }).toList();
+
+    print('🐾 DEBUG: Filtered pets for adopters: ${filtered.length}');
+    return filtered;
   } catch (e) {
+    print('❌ Error in userPetsProvider: $e');
     return [];
   }
 });

@@ -1,20 +1,63 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pet_adoption_app/presentation/providers/favorites_provider.dart';
 import 'package:pet_adoption_app/presentation/screens/main/bookings/booking_form_screen.dart';
 
-class PetDetailsScreen extends StatefulWidget {
-  final Map<String, dynamic> pet;
+class PetDetailsScreen extends ConsumerStatefulWidget {
+  final dynamic pet; // PetModel or PetEntity
 
   const PetDetailsScreen({super.key, required this.pet});
 
   @override
-  State<PetDetailsScreen> createState() => _PetDetailsScreenState();
+  ConsumerState<PetDetailsScreen> createState() => _PetDetailsScreenState();
 }
 
-class _PetDetailsScreenState extends State<PetDetailsScreen> {
-  bool _isFavorite = false;
+class _PetDetailsScreenState extends ConsumerState<PetDetailsScreen> {
+  /// Get pet value - handle both Map and Object types
+  dynamic _getPetValue(String key) {
+    if (widget.pet is Map) {
+      return widget.pet[key];
+    }
+    switch (key) {
+      case 'image':
+      case 'imageUrl':
+        return widget.pet.imageUrl ?? 'main_logo.png';
+      case 'name':
+        return widget.pet.name ?? 'Unknown';
+      case 'breed':
+        return widget.pet.breed ?? 'Breed';
+      case 'age':
+        return widget.pet.age ?? 0;
+      case 'gender':
+        return widget.pet.gender ?? 'Unknown';
+      case 'description':
+        return widget.pet.description ?? '';
+      case 'type':
+        return widget.pet.type ?? 'available';
+      case 'category':
+        return widget.pet.category ?? 'Unknown';
+      case 'location':
+        return widget.pet.location ?? 'Unknown';
+      default:
+        return null;
+    }
+  }
+
+  String _getPetId() {
+    if (widget.pet is Map) {
+      return (widget.pet['_id'] ?? widget.pet['id'] ?? '').toString();
+    }
+
+    return (widget.pet.id ?? '').toString();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final petId = _getPetId();
+    final isFavorite = petId.isNotEmpty
+        ? ref.watch(isPetFavoriteProvider(petId))
+        : false;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -27,22 +70,31 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
         actions: [
           IconButton(
             icon: Icon(
-              _isFavorite ? Icons.favorite : Icons.favorite_outline,
-              color: _isFavorite ? Colors.red : Colors.grey,
+              isFavorite ? Icons.favorite : Icons.favorite_outline,
+              color: isFavorite ? Colors.red : Colors.grey,
             ),
-            onPressed: () {
-              setState(() => _isFavorite = !_isFavorite);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    _isFavorite
-                        ? '${widget.pet['name']} added to favorites!'
-                        : '${widget.pet['name']} removed from favorites!',
-                  ),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            },
+            onPressed: petId.isEmpty
+                ? null
+                : () async {
+                    await ref
+                        .read(favoritePetIdsProvider.notifier)
+                        .toggleFavorite(petId);
+
+                    if (!context.mounted) return;
+
+                    final updatedState = ref.read(isPetFavoriteProvider(petId));
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          updatedState
+                              ? '${_getPetValue('name')} added to favorites!'
+                              : '${_getPetValue('name')} removed from favorites!',
+                        ),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
           ),
         ],
       ),
@@ -56,7 +108,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
               height: 300,
               color: Colors.grey[200],
               child: Image.asset(
-                'assets/images/${widget.pet['image']}',
+                'assets/images/${_getPetValue('image')}',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
                   color: Colors.grey[300],
@@ -79,7 +131,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            widget.pet['name'] ?? 'Unknown',
+                            _getPetValue('name'),
                             style: const TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
@@ -88,7 +140,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            widget.pet['breed'] ?? 'Breed',
+                            _getPetValue('breed'),
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],
@@ -98,7 +150,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                         ],
                       ),
                       Icon(
-                        widget.pet['gender'] == 'Male'
+                        _getPetValue('gender') == 'Male'
                             ? Icons.male
                             : Icons.female,
                         color: const Color(0xFFF67D2C),
@@ -113,17 +165,17 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                     children: [
                       _buildInfoPill(
                         icon: Icons.cake_outlined,
-                        label: widget.pet['age'] ?? 'Age',
+                        label: '${_getPetValue('age')} years',
                       ),
                       const SizedBox(width: 12),
                       _buildInfoPill(
                         icon: Icons.location_on_outlined,
-                        label: 'Available',
+                        label: _getPetValue('location') ?? 'Location',
                       ),
                       const SizedBox(width: 12),
                       _buildInfoPill(
                         icon: Icons.pets,
-                        label: widget.pet['gender'] ?? 'Gender',
+                        label: _getPetValue('gender') ?? 'Gender',
                       ),
                     ],
                   ),
@@ -131,7 +183,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
 
                   // Description Section
                   Text(
-                    'About ${widget.pet['name']}',
+                    'About ${_getPetValue('name')}',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -140,8 +192,8 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    widget.pet['description'] ??
-                        'This is a wonderful pet looking for a loving home. ${widget.pet['name']} is friendly, playful, and ready to be part of your family.',
+                    _getPetValue('description') ??
+                        'This is a wonderful pet looking for a loving home. ${_getPetValue('name')} is friendly, playful, and ready to be part of your family.',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[700],
@@ -171,16 +223,10 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                         ),
                         const SizedBox(height: 12),
                         _buildDetailRow('Type', 'Dog'),
-                        _buildDetailRow(
-                          'Breed',
-                          widget.pet['breed'] ?? 'Unknown',
-                        ),
-                        _buildDetailRow('Age', widget.pet['age'] ?? 'Unknown'),
-                        _buildDetailRow(
-                          'Gender',
-                          widget.pet['gender'] ?? 'Unknown',
-                        ),
-                        _buildDetailRow('Health Status', 'Vaccinated'),
+                        _buildDetailRow('Breed', _getPetValue('breed')),
+                        _buildDetailRow('Age', '${_getPetValue('age')} years'),
+                        _buildDetailRow('Gender', _getPetValue('gender')),
+                        _buildDetailRow('Health Status', 'Healthy'),
                       ],
                     ),
                   ),

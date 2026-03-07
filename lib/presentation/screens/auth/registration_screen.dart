@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'login_screen.dart';
 import 'package:pet_adoption_app/features/auth/presentation/notifiers/auth_notifier.dart';
+import 'package:pet_adoption_app/presentation/providers/user_provider.dart';
+import 'package:pet_adoption_app/presentation/screens/main/main_navigation_screen.dart';
 
 class RegistrationScreen extends ConsumerStatefulWidget {
   const RegistrationScreen({super.key});
@@ -124,15 +126,20 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       setState(() => _isLoading = false);
 
       if (authState.isAuthenticated && mounted) {
+        // User successfully registered - go directly to main app with their data
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => MainNavigationScreen(
+              userProvider: UserProvider.fromAuthEntity(authState.user!),
+            ),
+          ),
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Account created successfully!'),
             duration: Duration(seconds: 2),
             backgroundColor: Colors.green,
           ),
-        );
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
         );
       } else if (authState.error != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

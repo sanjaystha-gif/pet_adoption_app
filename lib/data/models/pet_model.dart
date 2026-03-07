@@ -47,44 +47,71 @@ class PetModel {
 
   /// Convert from JSON response from API
   factory PetModel.fromJson(Map<String, dynamic> json) {
-    return PetModel(
-      id: json['_id'] ?? json['id'] ?? '',
-      name: json['itemName'] ?? json['name'] ?? '',
-      description: json['description'] ?? '',
-      type: json['type'] ?? 'available',
-      category: json['category'] is Map
-          ? json['category']['_id'] ?? json['category']['id'] ?? ''
-          : json['category'] ?? '',
-      location: json['location'] ?? '',
-      mediaUrl: json['media'] ?? json['mediaUrl'] ?? '',
-      mediaType: json['mediaType'] ?? 'photo',
-      breed: json['breed'] ?? '',
-      age: json['age'] is int
-          ? json['age']
-          : int.tryParse(json['age'].toString()) ?? 0,
-      gender: json['gender'] ?? '',
-      size: json['size'] ?? '',
-      healthStatus: json['healthStatus'] ?? 'healthy',
-      isAdopted: json['isClaimed'] ?? json['isAdopted'] ?? false,
-      adoptedBy: json['claimedBy'] is Map
-          ? json['claimedBy']['_id'] ?? json['claimedBy']['id']
-          : json['claimedBy'] ?? json['adoptedBy'],
-      adoptedByName: json['claimedBy'] is Map
-          ? json['claimedBy']['name']
-          : json['adoptedByName'],
-      postedBy: json['reportedBy'] is Map
-          ? json['reportedBy']['_id'] ?? json['reportedBy']['id'] ?? ''
-          : json['reportedBy'] ?? json['postedBy'] ?? '',
-      postedByName: json['reportedBy'] is Map
-          ? json['reportedBy']['name'] ?? ''
-          : json['postedByName'] ?? '',
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
-      adoptedAt: json['adoptedAt'] != null
-          ? DateTime.parse(json['adoptedAt'])
-          : null,
-    );
+    // Safe helper functions
+    String getString(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is Map) {
+        return value['_id'] ?? value['id'] ?? value['name'] ?? '';
+      }
+      return value.toString();
+    }
+
+    int getInt(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value) ?? 0;
+      return 0;
+    }
+
+    bool getBool(dynamic value) {
+      if (value == null) return false;
+      if (value is bool) return value;
+      if (value is String) return value.toLowerCase() == 'true';
+      return false;
+    }
+
+    try {
+      return PetModel(
+        id: getString(json['_id'] ?? json['id']),
+        name: getString(json['itemName'] ?? json['name']),
+        description: getString(json['description']),
+        type: getString(json['type']) == ''
+            ? 'available'
+            : getString(json['type']),
+        category: getString(json['category']),
+        location: getString(json['location']),
+        mediaUrl: getString(json['media'] ?? json['mediaUrl']),
+        mediaType: getString(json['mediaType']) == ''
+            ? 'photo'
+            : getString(json['mediaType']),
+        breed: getString(json['breed']),
+        age: getInt(json['age']),
+        gender: getString(json['gender']),
+        size: getString(json['size']),
+        healthStatus: getString(json['healthStatus']) == ''
+            ? 'healthy'
+            : getString(json['healthStatus']),
+        isAdopted: getBool(json['isClaimed'] ?? json['isAdopted']),
+        adoptedBy: getString(json['claimedBy'] ?? json['adoptedBy']),
+        adoptedByName: json['claimedBy'] is Map
+            ? getString(json['claimedBy']['name'])
+            : getString(json['adoptedByName']),
+        postedBy: getString(json['reportedBy'] ?? json['postedBy']),
+        postedByName: json['reportedBy'] is Map
+            ? getString(json['reportedBy']['name'])
+            : getString(json['postedByName']),
+        createdAt: json['createdAt'] != null
+            ? DateTime.parse(json['createdAt'].toString())
+            : DateTime.now(),
+        adoptedAt: json['adoptedAt'] != null
+            ? DateTime.parse(json['adoptedAt'].toString())
+            : null,
+      );
+    } catch (e) {
+      // Error parsing pet; rethrow for upstream handling
+      rethrow;
+    }
   }
 
   /// Convert to JSON for API requests

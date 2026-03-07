@@ -14,12 +14,16 @@ class UserProvider extends ChangeNotifier {
     String? bio,
   }) {
     _user = UserModel(
-      firstName: firstName ?? 'John',
-      lastName: lastName ?? 'Doe',
-      email: email ?? 'john.doe@example.com',
-      phone: phone ?? '+977-9841234567',
-      address: address ?? 'Kathmandu, Nepal',
-      bio: bio ?? 'Pet lover and animal enthusiast',
+      firstName: (firstName != null && firstName.isNotEmpty)
+          ? firstName
+          : 'User',
+      lastName: (lastName != null && lastName.isNotEmpty) ? lastName : '',
+      email: (email != null && email.isNotEmpty) ? email : 'user@example.com',
+      phone: (phone != null && phone.isNotEmpty) ? phone : '',
+      address: (address != null && address.isNotEmpty) ? address : '',
+      bio: (bio != null && bio.isNotEmpty)
+          ? bio
+          : 'Pet lover and animal enthusiast',
     );
   }
 

@@ -1,49 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pet_adoption_app/presentation/providers/favorites_provider.dart';
 import 'package:pet_adoption_app/presentation/screens/main/pet_details/pet_details_screen.dart';
 
-class SavedPetsScreen extends StatefulWidget {
+class SavedPetsScreen extends ConsumerWidget {
   const SavedPetsScreen({super.key});
 
   @override
-  State<SavedPetsScreen> createState() => _SavedPetsScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final savedPetsAsync = ref.watch(favoritePetsProvider);
 
-class _SavedPetsScreenState extends State<SavedPetsScreen> {
-  final List<Map<String, dynamic>> _savedPets = [
-    {
-      "name": "Shephard",
-      "meta": "Adult | Playful",
-      "image": "shephard.jpg",
-      "breed": "German Shepherd",
-      "age": "Adult",
-      "gender": "Male",
-      "description":
-          "Shephard is a friendly and loyal German Shepherd who loves playing fetch and going on adventures. He is great with kids and other pets.",
-    },
-    {
-      "name": "Kaali",
-      "meta": "Young | Loyal",
-      "image": "kaali.jpg",
-      "breed": "Labrador",
-      "age": "Young",
-      "gender": "Female",
-      "description":
-          "Kaali is a young and energetic Labrador with a golden heart. She loves swimming and is very affectionate with her family.",
-    },
-    {
-      "name": "Gori",
-      "meta": "Puppy | Protective",
-      "image": "gori.jpg",
-      "breed": "Poodle",
-      "age": "Puppy",
-      "gender": "Female",
-      "description":
-          "Gori is an adorable and intelligent Poodle puppy. She is already learning commands and loves cuddles.",
-    },
-  ];
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -64,8 +30,10 @@ class _SavedPetsScreenState extends State<SavedPetsScreen> {
         centerTitle: true,
       ),
       backgroundColor: const Color(0xFFF7F7F8),
-      body: _savedPets.isEmpty
-          ? Center(
+      body: savedPetsAsync.when(
+        data: (savedPets) {
+          if (savedPets.isEmpty) {
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -95,44 +63,49 @@ class _SavedPetsScreenState extends State<SavedPetsScreen> {
                   ),
                 ],
               ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _savedPets.length,
-              itemBuilder: (context, index) {
-                final pet = _savedPets[index];
-                final imageName = pet['image'] ?? 'main_logo.png';
-                return _SavedPetCard(
-                  pet: pet,
-                  imageName: imageName,
-                  onRemove: () {
-                    setState(() {
-                      _savedPets.removeAt(index);
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Pet removed from saved'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: savedPets.length,
+            itemBuilder: (context, index) {
+              final pet = savedPets[index];
+              return _SavedPetCard(
+                pet: pet,
+                onRemove: () async {
+                  await ref
+                      .read(favoritePetIdsProvider.notifier)
+                      .removeFavorite(pet.id);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Pet removed from saved'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, __) => Center(
+          child: Text(
+            'Could not load saved pets',
+            style: TextStyle(color: Colors.grey[600], fontFamily: 'Afacad'),
+          ),
+        ),
+      ),
     );
   }
 }
 
 class _SavedPetCard extends StatelessWidget {
-  final Map<String, dynamic> pet;
-  final String imageName;
+  final dynamic pet;
   final VoidCallback onRemove;
 
-  const _SavedPetCard({
-    required this.pet,
-    required this.imageName,
-    required this.onRemove,
-  });
+  const _SavedPetCard({required this.pet, required this.onRemove});
 
   @override
   Widget build(BuildContext context) {
@@ -164,16 +137,10 @@ class _SavedPetCard extends StatelessWidget {
                 bottomLeft: Radius.circular(16),
               ),
               child: Image.asset(
-                'assets/images/$imageName',
+                'assets/images/main_logo.png',
                 width: 120,
                 height: 120,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Image.asset(
-                  'assets/images/main_logo.png',
-                  width: 120,
-                  height: 120,
-                  fit: BoxFit.cover,
-                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -186,7 +153,7 @@ class _SavedPetCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      pet['name'] ?? 'Unknown',
+                      pet.name,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -195,7 +162,7 @@ class _SavedPetCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      pet['meta'] ?? '',
+                      '${pet.age} years | ${pet.gender}',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[600],
@@ -204,7 +171,7 @@ class _SavedPetCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      pet['breed'] ?? 'Unknown Breed',
+                      pet.breed,
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.grey[700],

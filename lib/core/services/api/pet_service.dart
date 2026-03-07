@@ -215,11 +215,14 @@ class PetService {
         data: data,
       );
 
-      if (response.statusCode == 200) {
-        final petModel = PetModel.fromJson(
-          response.data['data'] ?? response.data,
-        );
-        return petModel.toEntity();
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        try {
+          final responseData = response.data['data'] ?? response.data;
+          final petModel = PetModel.fromJson(responseData);
+          return petModel.toEntity();
+        } catch (parseError) {
+          rethrow;
+        }
       }
 
       throw ApiFailure(
@@ -271,12 +274,17 @@ class PetService {
     try {
       final response = await _apiService.deleteAuth('$_itemsEndpoint/$petId');
 
-      if (response.statusCode != 200) {
-        throw ApiFailure(
-          message: response.data['message'] ?? 'Pet deletion failed',
-          statusCode: response.statusCode,
-        );
+      // Accept 200, 201, or 204 as successful deletion
+      if (response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          response.statusCode == 204) {
+        return;
       }
+
+      throw ApiFailure(
+        message: response.data['message'] ?? 'Pet deletion failed',
+        statusCode: response.statusCode,
+      );
     } on ApiFailure {
       rethrow;
     } catch (e) {

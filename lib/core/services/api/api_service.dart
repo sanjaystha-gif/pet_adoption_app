@@ -83,15 +83,15 @@ class ApiService {
     return InterceptorsWrapper(
       onRequest: (options, handler) async {
         final token = await getStoredToken();
+        // ignore: avoid_print
+        print('🔐 Auth Interceptor - Token found: ${token != null}');
         if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
-          print(
-            '✅ Token added to request: Bearer ${token.substring(0, 20)}...',
-          );
+          // ignore: avoid_print
+          print('🔐 Auth Interceptor - Token added to headers');
         } else {
-          print(
-            '⚠️ NO TOKEN FOUND - Request will fail if endpoint requires auth',
-          );
+          // ignore: avoid_print
+          print('🔐 Auth Interceptor - NO TOKEN FOUND');
         }
         return handler.next(options);
       },
@@ -103,35 +103,31 @@ class ApiService {
     return InterceptorsWrapper(
       onRequest: (options, handler) {
         // Debug logging - uncomment for development
-        print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        print('📤 REQUEST');
-        print('Method: ${options.method.toUpperCase()}');
-        print('Path: ${options.path}');
-        print('Query: ${options.queryParameters}');
-        if (options.data != null) {
-          print('Data: ${options.data}');
-        }
-        print('Headers: ${options.headers}');
-        print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        // print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        // print('📤 REQUEST');
+        // print('Method: ${options.method.toUpperCase()}');
+        // print('Path: ${options.path}');
+        // print('Query: ${options.queryParameters}');
+        // if (options.data != null) {
+        //   print('Data: ${options.data}');
+        // }
+        // print('Headers: ${options.headers}');
+        // print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         return handler.next(options);
       },
       onResponse: (response, handler) {
         // Debug logging - uncomment for development
-        print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        print('📥 RESPONSE: ${response.statusCode}');
-        print('Path: ${response.requestOptions.path}');
-        print('Data: ${response.data}');
-        print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        // print('RESPONSE: ${response.statusCode}');
+        // print('Path: ${response.requestOptions.path}');
+        // print('Data: ${response.data}');
         return handler.next(response);
       },
       onError: (error, handler) {
         // Debug logging - uncomment for development
-        // print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        // print('❌ ERROR');
+        // print('ERROR');
         // print('Message: ${error.message}');
         // print('Status: ${error.response?.statusCode}');
         // print('Data: ${error.response?.data}');
-        // print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         return handler.next(error);
       },
     );
@@ -158,10 +154,10 @@ class ApiService {
     try {
       _cachedToken = token;
       await _secureStorage.write(key: 'auth_token', value: token);
-      print('💾 Token saved successfully: ${token.substring(0, 30)}...');
+      // Token saved successfully
     } catch (e) {
       // Debug logging - uncomment for development
-      print('Error saving token: $e');
+      // print('Error saving token: $e');
       rethrow;
     }
   }
@@ -170,18 +166,13 @@ class ApiService {
   Future<String?> getStoredToken() async {
     try {
       if (_cachedToken != null) {
-        print('📦 Token from cache: ${_cachedToken!.substring(0, 20)}...');
         return _cachedToken;
       }
       _cachedToken = await _secureStorage.read(key: 'auth_token');
-      if (_cachedToken != null) {
-        print('📦 Token from storage: ${_cachedToken!.substring(0, 20)}...');
-      } else {
-        print('📦 No token found in storage');
-      }
       return _cachedToken;
     } catch (e) {
-      print('❌ Error retrieving token: $e');
+      // Debug logging - uncomment for development
+      // print('Error retrieving token: $e');
       return null;
     }
   }
@@ -200,7 +191,6 @@ class ApiService {
 
   /// Get the authenticated Dio instance with auth interceptor
   Dio get dio => _dioWithAuth;
-
   // ==================== HTTP METHODS ====================
 
   /// Perform POST request (Public - No Auth)

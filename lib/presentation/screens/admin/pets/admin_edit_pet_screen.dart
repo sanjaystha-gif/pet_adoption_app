@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:pet_adoption_app/core/services/permission/permission_service.dart';
+import 'package:pet_adoption_app/presentation/providers/api_providers.dart';
 import 'dart:io';
 import 'package:pet_adoption_app/presentation/providers/pet_provider.dart';
-import 'package:pet_adoption_app/presentation/providers/api_providers.dart';
 
 class AdminEditPetScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> pet;
@@ -18,8 +19,8 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
   late TextEditingController _nameController;
   late TextEditingController _breedController;
   late TextEditingController _descriptionController;
-  late String _selectedAge;
-  late String _selectedGender;
+  String _selectedAge = 'Puppy'; // Default value
+  String _selectedGender = 'Male'; // Default value
   bool _isLoading = false;
   File? _selectedImage;
   final ImagePicker _imagePicker = ImagePicker();
@@ -35,16 +36,21 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
     _descriptionController = TextEditingController(
       text: widget.pet['description'] ?? '',
     );
-    _selectedAge = widget.pet['age'] ?? 'Puppy';
-    _selectedGender = widget.pet['gender'] ?? 'Male';
-  }
+    // Convert numeric age to category string
+    final petAge = widget.pet['age'];
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _breedController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
+    final convertedAge = _getCategoryFromAge(
+      petAge is int ? petAge : int.tryParse(petAge.toString()) ?? 0,
+    );
+
+    // Ensure the converted age is in the dropdown list
+    _selectedAge = _ages.contains(convertedAge) ? convertedAge : 'Puppy';
+
+    // Ensure gender is capitalized
+    final genderFromBackend = (widget.pet['gender'] ?? 'Male').toString();
+    _selectedGender =
+        genderFromBackend[0].toUpperCase() +
+        genderFromBackend.substring(1).toLowerCase();
   }
 
   @override
@@ -156,7 +162,11 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
                       ),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
-                        initialValue: _selectedAge,
+                        initialValue:
+                            (_selectedAge.isEmpty ||
+                                !_ages.contains(_selectedAge))
+                            ? 'Puppy'
+                            : _selectedAge,
                         items: _ages
                             .map(
                               (age) => DropdownMenuItem(
@@ -363,6 +373,17 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
 
   Future<void> _pickImage() async {
     try {
+      final status = await PermissionService.requestPhotos();
+      if (!PermissionService.isGranted(status)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Photo permission required'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       final pickedFile = await _imagePicker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 80,
@@ -396,6 +417,14 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
         throw Exception('Pet ID not found');
       }
 
+      // If image changed, upload it first
+      String mediaUrlToSend = widget.pet['mediaUrl'] ?? 'main_logo.png';
+      if (_selectedImage != null) {
+        mediaUrlToSend = await ref.read(
+          uploadPhotoProvider(_selectedImage!.path).future,
+        );
+      }
+
       // Call backend to update pet
       await petService.updatePet(
         petId: petId.toString(),
@@ -407,17 +436,12 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
         type: widget.pet['type'] ?? 'available',
         categoryId: '6973651cd96b87a44687ca13', // Dogs category ID
         location: widget.pet['location'] ?? 'Kathmandu',
-        mediaUrl:
-            _selectedImage?.path ??
-            widget.pet['mediaUrl'] ??
-            'profile.jpg', // Use selected image or keep existing
+        mediaUrl: mediaUrlToSend,
         mediaType: widget.pet['mediaType'] ?? 'photo',
       );
 
-      // Invalidate the pet cache to force refresh
-      ref.invalidate(allPetsProvider);
-      ref.invalidate(adminUpdatedPetsProvider);
-      ref.invalidate(userPetsProvider);
+      // Refresh the admin pets list by invalidating the provider
+      ref.invalidate(adminPetsNotifierProvider);
 
       if (!mounted) return;
 
@@ -437,12 +461,34 @@ class _AdminEditPetScreenState extends ConsumerState<AdminEditPetScreen> {
         SnackBar(
           content: Text('Error updating pet: $e'),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
         ),
       );
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  /// Convert numeric age to age category
+  String _getCategoryFromAge(int age) {
+    // Match the exact ages returned by backend
+    switch (age) {
+      case 1:
+        return 'Puppy';
+      case 3:
+        return 'Young';
+      case 5:
+        return 'Adult';
+      case 10:
+        return 'Senior';
+      default:
+        // If age doesn't match exactly, find closest match
+        if (age <= 1) return 'Puppy';
+        if (age <= 3) return 'Young';
+        if (age <= 5) return 'Adult';
+        return 'Senior';
     }
   }
 
