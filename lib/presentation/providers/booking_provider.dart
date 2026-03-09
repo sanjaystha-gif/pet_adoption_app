@@ -1,42 +1,50 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pet_adoption_app/core/services/api/api_service.dart';
 import 'package:pet_adoption_app/core/services/api/booking_service.dart';
+import 'package:pet_adoption_app/core/services/hive/hive_service.dart';
 import 'package:pet_adoption_app/data/models/booking_model.dart';
 import 'package:pet_adoption_app/presentation/providers/api_providers.dart';
 
 final bookingServiceProvider = Provider<BookingService>((ref) {
-  final apiService = ApiService(); // Get the ApiService singleton with auth
+  final apiService = ref.watch(apiServiceProvider);
   return BookingService(apiService.dio); // Use dio which is _dioWithAuth
 });
 
 final userBookingsProvider = FutureProvider<List<BookingModel>>((ref) async {
   final userEntity = ref.watch(currentUserProvider);
-  if (userEntity == null) return [];
+  String? userId = userEntity?.id;
+  String? userEmail = userEntity?.email;
 
-  final bookingService = ref.watch(bookingServiceProvider);
-  try {
-    return await bookingService.getUserBookings(userEntity.id);
-  } catch (e) {
+  if (userId == null || userId.isEmpty) {
+    final hiveUser = await ref.read(hiveServiceProvider).getAuthData();
+    userId = hiveUser?.authId;
+    userEmail = hiveUser?.email;
+  }
+
+  if (userId == null || userId.isEmpty || userId.toLowerCase() == 'unknown') {
+    // Prevent accidentally loading shared bookings for non-unique IDs.
     return [];
   }
+
+  final bookingService = ref.watch(bookingServiceProvider);
+  final bookings = await bookingService.getUserBookings(userId);
+
+  final normalizedEmail = (userEmail ?? '').trim().toLowerCase();
+  return bookings.where((booking) {
+    final bookingUserId = booking.userId.trim();
+    final bookingEmail = booking.userEmail.trim().toLowerCase();
+    return bookingUserId == userId ||
+        (normalizedEmail.isNotEmpty && bookingEmail == normalizedEmail);
+  }).toList();
 });
 
 final adminBookingsProvider = FutureProvider<List<BookingModel>>((ref) async {
   final bookingService = ref.watch(bookingServiceProvider);
-  try {
-    return await bookingService.getAllBookings();
-  } catch (e) {
-    return [];
-  }
+  return bookingService.getAllBookings();
 });
 
 final pendingBookingsProvider = FutureProvider<List<BookingModel>>((ref) async {
   final bookingService = ref.watch(bookingServiceProvider);
-  try {
-    return await bookingService.getAllBookings(status: 'pending');
-  } catch (e) {
-    return [];
-  }
+  return bookingService.getAllBookings(status: 'pending');
 });
 
 class CreateBookingNotifier extends AsyncNotifier<void> {
@@ -51,6 +59,8 @@ class CreateBookingNotifier extends AsyncNotifier<void> {
     required String petId,
     required String petName,
     required String petImageUrl,
+    String? address,
+    String? reason,
   }) async {
     final bookingService = ref.read(bookingServiceProvider);
     try {
@@ -63,6 +73,8 @@ class CreateBookingNotifier extends AsyncNotifier<void> {
         petId: petId,
         petName: petName,
         petImageUrl: petImageUrl,
+        address: address,
+        reason: reason,
       );
       state = const AsyncValue.data(null);
       ref.invalidate(userBookingsProvider);

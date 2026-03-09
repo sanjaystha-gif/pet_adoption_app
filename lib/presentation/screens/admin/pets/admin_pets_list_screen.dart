@@ -4,6 +4,7 @@ import 'package:pet_adoption_app/presentation/providers/pet_provider.dart';
 import 'package:pet_adoption_app/presentation/providers/api_providers.dart';
 import 'package:pet_adoption_app/presentation/screens/admin/pets/admin_add_pet_screen.dart';
 import 'package:pet_adoption_app/presentation/screens/admin/pets/admin_edit_pet_screen.dart';
+import 'package:pet_adoption_app/presentation/widgets/smart_pet_image.dart';
 
 class AdminPetsListScreen extends ConsumerStatefulWidget {
   const AdminPetsListScreen({super.key});
@@ -57,8 +58,14 @@ class _AdminPetsListScreenState extends ConsumerState<AdminPetsListScreen> {
     int failed = 0;
 
     for (final pet in pets) {
+      final petId = pet.id.trim();
+      if (petId.isEmpty || petId.toLowerCase() == 'null') {
+        failed++;
+        continue;
+      }
+
       try {
-        await petService.deletePet(petId: pet.id);
+        await petService.deletePet(petId: petId);
         deleted++;
       } catch (e) {
         final message = e.toString();
@@ -310,14 +317,14 @@ class _PetListCard extends ConsumerWidget {
 
     try {
       final petService = ref.read(petServiceProvider);
-      final petId = pet['id'] ?? pet['_id'];
+      final petId = (pet['id'] ?? pet['_id'] ?? '').toString().trim();
 
-      if (petId == null) {
-        throw Exception('Pet ID not found');
+      if (petId.isEmpty || petId.toLowerCase() == 'null') {
+        throw Exception('Invalid pet ID for deletion');
       }
 
       // Delete from API first
-      await petService.deletePet(petId: petId.toString());
+      await petService.deletePet(petId: petId);
 
       // Ensure backend has fully processed the deletion
       await Future.delayed(const Duration(milliseconds: 1500));
@@ -434,17 +441,11 @@ class _PetListCard extends ConsumerWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
-                'assets/images/${pet['image']}',
+              child: SmartPetImage(
+                imageSource: pet['image'],
                 width: 80,
                 height: 80,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  width: 80,
-                  height: 80,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.pets),
-                ),
               ),
             ),
             const SizedBox(width: 12),

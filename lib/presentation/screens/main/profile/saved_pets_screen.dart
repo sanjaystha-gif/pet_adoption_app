@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pet_adoption_app/presentation/providers/favorites_provider.dart';
 import 'package:pet_adoption_app/presentation/screens/main/pet_details/pet_details_screen.dart';
+import 'package:pet_adoption_app/presentation/widgets/smart_pet_image.dart';
 
 class SavedPetsScreen extends ConsumerWidget {
   const SavedPetsScreen({super.key});
@@ -107,6 +108,36 @@ class _SavedPetCard extends StatelessWidget {
 
   const _SavedPetCard({required this.pet, required this.onRemove});
 
+  String _resolveImageSource() {
+    final candidates = <dynamic>[];
+
+    if (pet is Map<String, dynamic>) {
+      final map = pet as Map<String, dynamic>;
+      candidates.addAll([
+        map['imageUrl'],
+        map['mediaUrl'],
+        map['image'],
+        map['photos'] is List && (map['photos'] as List).isNotEmpty
+            ? (map['photos'] as List).first
+            : null,
+        map['media'] is List && (map['media'] as List).isNotEmpty
+            ? (map['media'] as List).first
+            : null,
+      ]);
+    } else {
+      candidates.addAll([pet.imageUrl, pet.mediaUrl]);
+    }
+
+    candidates.add('main_logo.png');
+
+    for (final candidate in candidates) {
+      final value = (candidate ?? '').toString().trim();
+      if (value.isNotEmpty) return value;
+    }
+
+    return 'main_logo.png';
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -136,8 +167,8 @@ class _SavedPetCard extends StatelessWidget {
                 topLeft: Radius.circular(16),
                 bottomLeft: Radius.circular(16),
               ),
-              child: Image.asset(
-                'assets/images/main_logo.png',
+              child: SmartPetImage(
+                imageSource: _resolveImageSource(),
                 width: 120,
                 height: 120,
                 fit: BoxFit.cover,

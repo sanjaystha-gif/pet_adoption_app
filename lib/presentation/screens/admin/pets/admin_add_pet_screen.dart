@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pet_adoption_app/core/services/permission/permission_service.dart';
+import 'package:pet_adoption_app/core/services/camera_service.dart';
 import 'package:pet_adoption_app/presentation/providers/api_providers.dart';
+import 'package:pet_adoption_app/core/services/hive/hive_service.dart';
 import 'dart:io';
 import 'package:pet_adoption_app/presentation/providers/pet_provider.dart';
 
@@ -16,6 +18,7 @@ class AdminAddPetScreen extends ConsumerStatefulWidget {
 class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
+  String _selectedCategory = 'Dog';
   String _selectedBreed = 'Golden Retriever';
   String _selectedAge = 'Puppy';
   String _selectedGender = 'Male';
@@ -23,9 +26,10 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
   File? _selectedImage;
   final ImagePicker _imagePicker = ImagePicker();
 
+  final List<String> _categories = ['Dog', 'Cat'];
   final List<String> _ages = ['Puppy', 'Young', 'Adult', 'Senior'];
   final List<String> _genders = ['Male', 'Female'];
-  final List<String> _breeds = [
+  final List<String> _dogBreeds = [
     'Golden Retriever',
     'Labrador Retriever',
     'German Shepherd',
@@ -46,6 +50,24 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
     'Mixed Breed',
     'Other',
   ];
+
+  final List<String> _catBreeds = [
+    'Persian',
+    'Siamese',
+    'Maine Coon',
+    'Ragdoll',
+    'British Shorthair',
+    'Bengal',
+    'Sphynx',
+    'Abyssinian',
+    'Scottish Fold',
+    'Domestic Shorthair',
+    'Mixed Breed',
+    'Other',
+  ];
+
+  List<String> get _breedsForCategory =>
+      _selectedCategory == 'Cat' ? _catBreeds : _dogBreeds;
 
   @override
   void dispose() {
@@ -115,12 +137,12 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
                         height: 200,
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: orange.withOpacity(0.3),
+                            color: orange.withValues(alpha: 0.3),
                             width: 2,
                             style: BorderStyle.solid,
                           ),
                           borderRadius: BorderRadius.circular(12),
-                          color: orange.withOpacity(0.05),
+                          color: orange.withValues(alpha: 0.05),
                         ),
                         child: _selectedImage != null
                             ? Stack(
@@ -230,12 +252,44 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
                     ),
                     const SizedBox(height: 16),
 
+                    // Category Dropdown
+                    _buildLabel('Category', Icons.pets),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      initialValue: _selectedCategory,
+                      items: _categories
+                          .map(
+                            (category) => DropdownMenuItem(
+                              value: category,
+                              child: Text(
+                                category,
+                                style: const TextStyle(fontFamily: 'Afacad'),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            _selectedCategory = value;
+                            final newBreeds = _breedsForCategory;
+                            if (!newBreeds.contains(_selectedBreed)) {
+                              _selectedBreed = newBreeds.first;
+                            }
+                          });
+                        }
+                      },
+                      decoration: _buildInputDecoration('Select category'),
+                      icon: Icon(Icons.arrow_drop_down, color: orange),
+                    ),
+                    const SizedBox(height: 16),
+
                     // Breed Dropdown
                     _buildLabel('Breed', Icons.category),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      value: _selectedBreed,
-                      items: _breeds
+                      initialValue: _selectedBreed,
+                      items: _breedsForCategory
                           .map(
                             (breed) => DropdownMenuItem(
                               value: breed,
@@ -266,7 +320,7 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
                               _buildLabel('Age', Icons.cake),
                               const SizedBox(height: 8),
                               DropdownButtonFormField<String>(
-                                value: _selectedAge,
+                                initialValue: _selectedAge,
                                 items: _ages
                                     .map(
                                       (age) => DropdownMenuItem(
@@ -302,7 +356,7 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
                               _buildLabel('Gender', Icons.male),
                               const SizedBox(height: 8),
                               DropdownButtonFormField<String>(
-                                value: _selectedGender,
+                                initialValue: _selectedGender,
                                 items: _genders
                                     .map(
                                       (gender) => DropdownMenuItem(
@@ -361,7 +415,7 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
                   backgroundColor: orange,
                   foregroundColor: Colors.white,
                   elevation: 3,
-                  shadowColor: orange.withOpacity(0.4),
+                  shadowColor: orange.withValues(alpha: 0.4),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -397,6 +451,45 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<String> _resolveCategoryId() async {
+    final normalizedSelected = _selectedCategory.toLowerCase().trim();
+
+    final categoryService = ref.read(categoryServiceProvider);
+    final categories = await categoryService.getAllCategories();
+
+    bool _nameMatches(String name) {
+      final normalizedName = name.toLowerCase().trim();
+      if (normalizedSelected == 'dog') {
+        return normalizedName == 'dog' ||
+            normalizedName == 'dogs' ||
+            normalizedName.contains('dog') ||
+            normalizedName.contains('canine');
+      }
+      if (normalizedSelected == 'cat') {
+        return normalizedName == 'cat' ||
+            normalizedName == 'cats' ||
+            normalizedName.contains('cat') ||
+            normalizedName.contains('feline');
+      }
+      return normalizedName == normalizedSelected;
+    }
+
+    for (final category in categories) {
+      if (_nameMatches(category.name) && category.id.isNotEmpty) {
+        return category.id;
+      }
+    }
+
+    // Keep previous dog fallback to avoid blocking when backend categories drift.
+    if (normalizedSelected == 'dog') {
+      return '6973651cd96b87a44687ca13';
+    }
+
+    throw Exception(
+      'Category "${_selectedCategory}" not found in backend. Please create it in backend categories first.',
     );
   }
 
@@ -445,8 +538,112 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
   }
 
   Future<void> _pickImage() async {
+    const orange = Color(0xFFF67D2C);
+
+    // Show dialog to choose between camera and gallery
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            'Select Image Source',
+            style: TextStyle(fontFamily: 'Afacad', fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            'Choose how you want to add a pet photo',
+            style: TextStyle(fontFamily: 'Afacad'),
+          ),
+          actions: [
+            // Cancel button
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(fontFamily: 'Afacad', color: Colors.grey),
+              ),
+            ),
+            // Gallery button
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _pickFromGallery();
+              },
+              icon: const Icon(Icons.photo_library),
+              label: const Text(
+                'Gallery',
+                style: TextStyle(fontFamily: 'Afacad'),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+            ),
+            // Camera button
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _pickFromCamera();
+              },
+              icon: const Icon(Icons.camera_alt),
+              label: const Text(
+                'Camera',
+                style: TextStyle(fontFamily: 'Afacad'),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: orange,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Pick image from device camera
+  Future<void> _pickFromCamera() async {
+    try {
+      final cameraService = CameraService();
+
+      debugPrint('📷 AdminAddPet: Requesting camera...');
+      final pickedFile = await cameraService.takePicture();
+
+      if (pickedFile != null) {
+        if (!mounted) return;
+        setState(() {
+          _selectedImage = pickedFile;
+        });
+        debugPrint(
+          '[Success] AdminAddPet: Camera photo selected: ${pickedFile.path}',
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Photo captured! Ready to upload.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        debugPrint('[Error] AdminAddPet: Camera error: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Camera error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Pick image from device gallery
+  Future<void> _pickFromGallery() async {
     try {
       final status = await PermissionService.requestPhotos();
+      if (!mounted) return;
+
       if (!PermissionService.isGranted(status)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -457,18 +654,24 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
         return;
       }
 
+      debugPrint('📷 AdminAddPet: Picking from gallery...');
       final pickedFile = await _imagePicker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 80,
       );
 
       if (pickedFile != null) {
+        if (!mounted) return;
         setState(() {
           _selectedImage = File(pickedFile.path);
         });
+        debugPrint(
+          '[Success] AdminAddPet: Gallery photo selected: ${pickedFile.path}',
+        );
       }
     } catch (e) {
       if (mounted) {
+        debugPrint('[Error] AdminAddPet: Gallery error: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error picking image: $e'),
@@ -494,21 +697,42 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
 
     try {
       final petService = ref.read(petServiceProvider);
+      final hiveService = ref.read(hiveServiceProvider);
+      final currentUser = await hiveService.getAuthData();
+      final adminId = (currentUser?.authId ?? '').trim();
+
+      if (adminId.isEmpty || adminId.toLowerCase() == 'unknown') {
+        throw Exception('Admin session not found. Please login again.');
+      }
 
       // If there's a selected image, upload it first
       String mediaUrlToSend = 'main_logo.png';
       if (_selectedImage != null) {
-        mediaUrlToSend = await ref.read(
-          uploadPhotoProvider(_selectedImage!.path).future,
+        debugPrint('📷 AdminAddPet: Uploading image: ${_selectedImage!.path}');
+        mediaUrlToSend = await petService.uploadPhoto(
+          filePath: _selectedImage!.path,
         );
+        debugPrint(
+          '[Upload] AdminAddPet: Image uploaded successfully: $mediaUrlToSend',
+        );
+      } else {
+        debugPrint('[Warning] AdminAddPet: No image selected, using default');
       }
+
+      debugPrint(
+        '[Pet] AdminAddPet: Creating pet with mediaUrl: $mediaUrlToSend',
+      );
+
+      final categoryId = await _resolveCategoryId();
+      final species = _selectedCategory.toLowerCase();
 
       // Create pet with backend API
       await petService.createPet(
         name: _nameController.text,
         description: _descriptionController.text,
         type: 'available',
-        categoryId: '6973651cd96b87a44687ca13', // Dogs category ID
+        species: species,
+        categoryId: categoryId,
         location: 'Kathmandu',
         mediaUrl: mediaUrlToSend,
         mediaType: 'photo',
@@ -517,13 +741,14 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
         gender: _selectedGender,
         size: 'medium',
         healthStatus: 'healthy',
-        userId: 'admin', // Will be replaced by actual admin ID from auth
+        userId: adminId,
       );
+
+      debugPrint('[Success] AdminAddPet: Pet created successfully!');
 
       // Refresh ALL pet providers so both admin and user views update
       ref.invalidate(adminPetsNotifierProvider);
       ref.invalidate(userPetsProvider);
-      ref.invalidate(petApiClientProvider);
 
       if (!mounted) return;
 
@@ -537,12 +762,15 @@ class _AdminAddPetScreenState extends ConsumerState<AdminAddPetScreen> {
       // Return success
       Navigator.pop(context, {'success': true});
     } catch (e) {
+      debugPrint('[Error] AdminAddPet: Error: $e');
+
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error adding pet: $e'),
+          content: Text('Error: ${e.toString()}'),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
         ),
       );
     } finally {

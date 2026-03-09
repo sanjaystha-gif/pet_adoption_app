@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:pet_adoption_app/core/error/failure.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pet_adoption_app/core/services/api/api_client.dart';
 import 'package:pet_adoption_app/core/services/api/api_service.dart';
@@ -46,8 +47,67 @@ class AuthNotifier {
     required this.apiService,
   });
 
+  Map<String, dynamic>? _extractUserMap(dynamic raw) {
+    if (raw is! Map) return null;
+
+    final map = Map<String, dynamic>.from(raw as Map);
+    final directCandidates = [
+      map['user'],
+      map['adopter'],
+      map['data'] is Map ? (map['data'] as Map)['user'] : null,
+      map['data'] is Map ? (map['data'] as Map)['adopter'] : null,
+      map['data'],
+    ];
+
+    for (final candidate in directCandidates) {
+      if (candidate is Map) {
+        return Map<String, dynamic>.from(candidate as Map);
+      }
+    }
+
+    if (map.containsKey('email') ||
+        map.containsKey('id') ||
+        map.containsKey('_id') ||
+        map.containsKey('userId')) {
+      return map;
+    }
+
+    return null;
+  }
+
+  String _extractUserId(Map<String, dynamic>? userMap, dynamic rawResponse) {
+    final raw = rawResponse is Map<String, dynamic>
+        ? rawResponse
+        : <String, dynamic>{};
+
+    final candidates = [
+      userMap?['id'],
+      userMap?['_id'],
+      userMap?['userId'],
+      userMap?['adopterId'],
+      raw['id'],
+      raw['_id'],
+      raw['userId'],
+      raw['adopterId'],
+      raw['data'] is Map ? (raw['data'] as Map)['id'] : null,
+      raw['data'] is Map ? (raw['data'] as Map)['_id'] : null,
+      raw['data'] is Map ? (raw['data'] as Map)['userId'] : null,
+      raw['data'] is Map ? (raw['data'] as Map)['adopterId'] : null,
+    ];
+
+    for (final value in candidates) {
+      final parsed = (value ?? '').toString().trim();
+      if (parsed.isNotEmpty && parsed.toLowerCase() != 'unknown') {
+        return parsed;
+      }
+    }
+
+    return '';
+  }
+
   Future<AuthState> login(String email, String password) async {
     try {
+      debugPrint('[Auth] Login request -> ${ApiClient.baseUrl}/adopters/login');
       final response = await apiClient.post(
         '/adopters/login',
         data: {'email': email, 'password': password},
@@ -58,7 +118,7 @@ class AuthNotifier {
         debugPrint('\n🔍 LOGIN API RESPONSE:');
         debugPrint('Full response.data: ${response.data}');
         debugPrint('response.data type: ${response.data.runtimeType}');
-        
+
         // Handle different response formats
         dynamic tokenRaw =
             response.data['token'] ??
@@ -84,9 +144,9 @@ class AuthNotifier {
           );
         }
 
-        final userData = response.data['user'] ?? response.data;
+        final userData = _extractUserMap(response.data);
         debugPrint('🔍 userData extracted: $userData');
-        if (userData == null || userData is! Map) {
+        if (userData == null) {
           return AuthState(
             isLoading: false,
             error: 'Invalid user data in response',
@@ -96,28 +156,28 @@ class AuthNotifier {
         // Save token in both Hive and ApiService secure storage (for interceptor)
         await hiveService.saveToken(token);
         await apiService.saveToken(token);
+        await hiveService.saveUserRole('adopter');
 
         // Try to get full user profile with GET request to fetch all fields
         // First try with userId, or fallback to email
-        String userId =
-            userData['id'] ?? userData['_id'] ?? userData['userId'] ?? '';
-        
+        String userId = _extractUserId(userData, response.data);
+
         debugPrint('🔍 Extracted userId from login response: "$userId"');
         debugPrint('  - userData["id"]: ${userData['id']}');
         debugPrint('  - userData["_id"]: ${userData['_id']}');
         debugPrint('  - userData["userId"]: ${userData['userId']}');
 
         // If no ID, use a generic endpoint or the email field we have
-        var fullUserData = userData;
+        Map<String, dynamic> fullUserData = userData;
 
         if (userId.isNotEmpty) {
           try {
             final profileResponse = await apiClient.get('/adopters/$userId');
             if (profileResponse.statusCode == 200) {
-              fullUserData =
-                  profileResponse.data['data'] ??
-                  profileResponse.data['user'] ??
-                  profileResponse.data;
+              final extracted = _extractUserMap(profileResponse.data);
+              if (extracted != null) {
+                fullUserData = extracted;
+              }
             }
           } catch (e) {
             // If profile fetch fails, just use the login response data
@@ -162,11 +222,12 @@ class AuthNotifier {
 
         // Create user entity
         final user = AuthEntity(
-          authId:
-              fullUserData['id'] ?? fullUserData['_id'] ?? userId ?? 'unknown',
+          authId: _extractUserId(fullUserData, response.data).isNotEmpty
+              ? _extractUserId(fullUserData, response.data)
+              : 'unknown',
           firstName: firstName.isNotEmpty ? firstName : 'User',
           lastName: lastName,
-          email: fullUserData['email'] ?? email ?? '',
+          email: (fullUserData['email'] ?? email).toString(),
           phoneNumber: phoneNumber.isNotEmpty ? phoneNumber : null,
           address: address.isNotEmpty ? address : null,
         );
@@ -193,7 +254,17 @@ class AuthNotifier {
             'Login failed';
         return AuthState(isLoading: false, error: errorMsg);
       }
+    } on ApiFailure catch (e) {
+      debugPrint(
+        '[Auth] Login ApiFailure status=${e.statusCode}, message=${e.message}',
+      );
+      final isNetworkIssue = e.statusCode == null;
+      final message = isNetworkIssue
+          ? 'Cannot connect to backend at ${ApiClient.baseUrl}. Check phone and server are on same network and firewall allows port 5000.'
+          : e.message;
+      return AuthState(isLoading: false, error: message);
     } catch (e) {
+      debugPrint('[Auth] Login unexpected error: $e');
       return AuthState(isLoading: false, error: 'Login error: ${e.toString()}');
     }
   }
@@ -207,6 +278,7 @@ class AuthNotifier {
     String address,
   ) async {
     try {
+      debugPrint('[Auth] Register request -> ${ApiClient.baseUrl}/adopters');
       // Clear any old cached data first
       await hiveService.deleteAuthData();
 
@@ -227,7 +299,7 @@ class AuthNotifier {
         debugPrint('\n🔍 REGISTER API RESPONSE:');
         debugPrint('Full response.data: ${response.data}');
         debugPrint('response.data type: ${response.data.runtimeType}');
-        
+
         dynamic tokenRaw =
             response.data['token'] ??
             response.data['accessToken'] ??
@@ -249,32 +321,33 @@ class AuthNotifier {
         if (token != null && token.isNotEmpty) {
           await hiveService.saveToken(token);
           await apiService.saveToken(token);
+          await hiveService.saveUserRole('adopter');
         }
 
         // Get user ID from response
-        String userId =
-            response.data['user']?['id'] ??
-            response.data['user']?['_id'] ??
-            response.data['id'] ??
-            response.data['_id'] ??
-            'unknown';
-        
+        Map<String, dynamic> userData =
+            _extractUserMap(response.data) ?? <String, dynamic>{};
+        String userId = _extractUserId(userData, response.data);
+
         debugPrint('🔍 Extracted userId from register response: "$userId"');
-        debugPrint('  - response.data["user"]["id"]: ${response.data['user']?['id']}');
-        debugPrint('  - response.data["user"]["_id"]: ${response.data['user']?['_id']}');
+        debugPrint(
+          '  - response.data["user"]["id"]: ${response.data['user']?['id']}',
+        );
+        debugPrint(
+          '  - response.data["user"]["_id"]: ${response.data['user']?['_id']}',
+        );
         debugPrint('  - response.data["id"]: ${response.data['id']}');
         debugPrint('  - response.data["_id"]: ${response.data['_id']}');
 
         // Try to fetch full user profile from backend
-        var userData = response.data['user'] ?? response.data;
-        if (userId != 'unknown' && userId.isNotEmpty) {
+        if (userId.isNotEmpty) {
           try {
             final profileResponse = await apiClient.get('/adopters/$userId');
             if (profileResponse.statusCode == 200) {
-              userData =
-                  profileResponse.data['data'] ??
-                  profileResponse.data['user'] ??
-                  profileResponse.data;
+              final extracted = _extractUserMap(profileResponse.data);
+              if (extracted != null) {
+                userData = extracted;
+              }
             }
           } catch (e) {
             // Ignore profile fetch errors during signup
@@ -298,7 +371,7 @@ class AuthNotifier {
 
         // Create user entity with firstName, lastName, phoneNumber, address
         final user = AuthEntity(
-          authId: userId,
+          authId: userId.isNotEmpty ? userId : 'unknown',
           firstName: firstName,
           lastName: lastName,
           email: email,
@@ -325,7 +398,17 @@ class AuthNotifier {
         final errorMsg = response.data['message'] ?? 'Registration failed';
         return AuthState(isLoading: false, error: errorMsg);
       }
+    } on ApiFailure catch (e) {
+      debugPrint(
+        '[Auth] Register ApiFailure status=${e.statusCode}, message=${e.message}',
+      );
+      final isNetworkIssue = e.statusCode == null;
+      final message = isNetworkIssue
+          ? 'Cannot connect to backend at ${ApiClient.baseUrl}. Check phone and server are on same network and firewall allows port 5000.'
+          : e.message;
+      return AuthState(isLoading: false, error: message);
     } catch (e) {
+      debugPrint('[Auth] Register unexpected error: $e');
       return AuthState(
         isLoading: false,
         error: 'Registration error: ${e.toString()}',
@@ -425,8 +508,29 @@ class AuthNotifier {
     } catch (e) {
       // Ignore API errors
     } finally {
-      // Always clear local data
+      // If biometric is enabled for current user, keep token for biometric login
+      final authData = await hiveService.getAuthData();
+      final userId = authData?.authId;
+
+      if (userId != null && userId.isNotEmpty && userId != 'unknown') {
+        final biometricEnabled = await hiveService.isBiometricLoginEnabled(
+          userId,
+        );
+
+        if (biometricEnabled) {
+          // Save token for biometric login and mark as last user
+          final token = await hiveService.getToken();
+          final role = await hiveService.getUserRole();
+          if (token != null && role != null) {
+            await hiveService.saveBiometricToken(userId, token, role);
+            await hiveService.saveLastBiometricUser(userId);
+          }
+        }
+      }
+
+      // Always clear active session data
       await hiveService.deleteToken();
+      await hiveService.deleteUserRole();
       await hiveService.deleteAuthData();
     }
   }

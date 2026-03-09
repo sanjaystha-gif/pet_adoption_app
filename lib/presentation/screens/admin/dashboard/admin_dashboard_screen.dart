@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pet_adoption_app/core/services/hive/hive_service.dart';
 import 'package:pet_adoption_app/features/admin/presentation/providers/admin_auth_provider.dart';
 import 'package:pet_adoption_app/presentation/screens/admin/pets/admin_pets_list_screen.dart';
 import 'package:pet_adoption_app/presentation/screens/admin/bookings/admin_booking_requests_screen.dart';
@@ -21,6 +22,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   @override
   void initState() {
     super.initState();
+    // Keep session role aligned with the active admin UI even after app restarts.
+    ref.read(hiveServiceProvider).saveUserRole('admin');
     _screens = [
       const AdminPetsListScreen(),
       const AdminBookingRequestsScreen(),

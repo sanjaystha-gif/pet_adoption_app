@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:pet_adoption_app/core/constants/hive_table_constant.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pet_adoption_app/core/services/permission/permission_service.dart';
 import 'package:pet_adoption_app/presentation/providers/api_providers.dart';
 import 'package:pet_adoption_app/core/services/hive/hive_service.dart';
 import 'package:pet_adoption_app/presentation/screens/main/bookings/my_bookings_screen.dart';
 import 'package:pet_adoption_app/presentation/providers/user_provider.dart';
+import 'package:pet_adoption_app/presentation/providers/booking_provider.dart';
+import 'package:pet_adoption_app/presentation/providers/favorites_provider.dart';
 import 'package:pet_adoption_app/presentation/screens/auth/login_screen.dart';
 import 'package:pet_adoption_app/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'edit_profile_screen.dart';
@@ -27,31 +29,154 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   File? _selectedImage;
   String? _profileImagePath; // can be network URL or local file path
+  final LocalAuthentication _localAuth = LocalAuthentication();
+  bool _biometricEnabled = false;
+  bool _isBiometricBusy = false;
 
   @override
   void initState() {
     super.initState();
     _loadProfileImage();
+    _loadBiometricPreference();
+  }
+
+  Future<String?> _currentUserId() async {
+    final hive = ref.read(hiveServiceProvider);
+    final hiveUser = await hive.getAuthData();
+    final userId = hiveUser?.authId;
+    if (userId == null || userId.isEmpty || userId == 'unknown') return null;
+    return userId;
+  }
+
+  Future<void> _loadBiometricPreference() async {
+    final userId = await _currentUserId();
+    if (userId == null || !mounted) return;
+
+    final hive = ref.read(hiveServiceProvider);
+    final enabled = await hive.isBiometricLoginEnabled(userId);
+    if (!mounted) return;
+    setState(() => _biometricEnabled = enabled);
+  }
+
+  Future<void> _onBiometricToggleChanged(bool enable) async {
+    if (_isBiometricBusy) return;
+
+    setState(() => _isBiometricBusy = true);
+
+    try {
+      final userId = await _currentUserId();
+      if (userId == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Unable to identify current user for biometric setup.',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      final hive = ref.read(hiveServiceProvider);
+
+      if (!enable) {
+        await hive.saveBiometricLoginEnabled(userId, false);
+        await hive.deleteBiometricToken(userId);
+        if (!mounted) return;
+        setState(() => _biometricEnabled = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Fingerprint login disabled.')),
+        );
+        return;
+      }
+
+      final deviceSupported = await _localAuth.isDeviceSupported();
+      final canCheckBiometrics = await _localAuth.canCheckBiometrics;
+      final available = await _localAuth.getAvailableBiometrics();
+
+      if (!deviceSupported || !canCheckBiometrics || available.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No fingerprint/biometric setup found on this device.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      final verified = await _localAuth.authenticate(
+        localizedReason: 'Verify fingerprint to enable fast login',
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+          useErrorDialogs: true,
+        ),
+      );
+
+      if (!verified) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Fingerprint verification failed. Biometric login not enabled.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Save biometric preference and store current token for biometric login
+      await hive.saveBiometricLoginEnabled(userId, true);
+      final token = await hive.getToken();
+      final role = await hive.getUserRole();
+      if (token != null && role != null) {
+        await hive.saveBiometricToken(userId, token, role);
+        await hive.saveLastBiometricUser(userId);
+      }
+      if (!mounted) return;
+      setState(() => _biometricEnabled = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Fingerprint login enabled successfully.'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Biometric setup error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isBiometricBusy = false);
+      }
+    }
   }
 
   Future<void> _loadProfileImage() async {
     try {
       final hive = ref.read(hiveServiceProvider);
       final hiveUser = await hive.getAuthData();
-      debugPrint('ProfileScreen: Loading image, hiveUser exists: ${hiveUser != null}');
+      debugPrint(
+        'ProfileScreen: Loading image, hiveUser exists: ${hiveUser != null}',
+      );
       debugPrint('ProfileScreen: authId = ${hiveUser?.authId}');
-      
-      // Try active user's profile picture first (fallback key)
-      var pic = await hive.getProfilePicture(HiveTableConstant.userTable);
-      
-      // If not found and we have a specific authId, try that
-      if (pic == null) {
-        final userId = hiveUser?.authId;
-        if (userId != null && userId.isNotEmpty && userId != 'unknown') {
-          pic = await hive.getProfilePicture(userId);
-        }
+
+      // Load profile picture for the specific user only
+      final userId = hiveUser?.authId;
+      String? pic;
+      if (userId != null && userId.isNotEmpty && userId != 'unknown') {
+        pic = await hive.getProfilePicture(userId);
       }
-      
+
       if (mounted && pic != null) {
         debugPrint('ProfileScreen: Setting profile image: $pic');
         setState(() => _profileImagePath = pic);
@@ -66,7 +191,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final userProvider = widget.userProvider;
-    debugPrint('ProfileScreen: Building with user - name: ${userProvider.user.fullName}, email: ${userProvider.user.email}, phone: ${userProvider.user.phone}, address: ${userProvider.user.address}');
+    debugPrint(
+      'ProfileScreen: Building with user - name: ${userProvider.user.fullName}, email: ${userProvider.user.email}, phone: ${userProvider.user.phone}, address: ${userProvider.user.address}',
+    );
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -237,6 +364,40 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                 );
               },
+            ),
+            const SizedBox(height: 8),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _biometricEnabled,
+                onChanged: _isBiometricBusy ? null : _onBiometricToggleChanged,
+                activeThumbColor: const Color(0xFFF67D2C),
+                title: const Text(
+                  'Fingerprint Login',
+                  style: TextStyle(
+                    fontFamily: 'Afacad',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+                subtitle: Text(
+                  _isBiometricBusy
+                      ? 'Verifying...'
+                      : 'Use fingerprint for faster and secure login',
+                  style: const TextStyle(fontFamily: 'Afacad', fontSize: 13),
+                ),
+                secondary: const Icon(
+                  Icons.fingerprint,
+                  color: Color(0xFFF67D2C),
+                ),
+              ),
             ),
             const SizedBox(height: 32),
 
@@ -471,36 +632,45 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final messenger = ScaffoldMessenger.of(context);
       messenger.showSnackBar(const SnackBar(content: Text('Uploading...')));
 
+      debugPrint('ProfileScreen: Starting upload for: ${file.path}');
+
       // Upload using provider
       final uploadedUrl = await ref.read(
         uploadProfilePictureProvider(file.path).future,
       );
+
+      debugPrint('ProfileScreen: Upload successful! URL: $uploadedUrl');
 
       // Update profile on backend using AuthNotifier and persist image locally
       final hive = ref.read(hiveServiceProvider);
       final hiveUser = await hive.getAuthData();
       final authNotifier = ref.read(authNotifierProvider);
       final userId = hiveUser?.authId;
-      
+
       debugPrint('ProfileScreen: Saving picture, userId: $userId');
 
-      // Always save under the active user key for immediate access
-      await hive.saveProfilePicture(HiveTableConstant.userTable, uploadedUrl);
-      
-      // Also save under specific userId if it's valid
+      // Save under specific userId only - each user has their own picture
       if (userId != null && userId.isNotEmpty && userId != 'unknown') {
         await hive.saveProfilePicture(userId, uploadedUrl);
+        debugPrint('ProfileScreen: Saved to Hive under userId: $userId');
+
         await authNotifier.updateUserProfile(
           userId: userId,
           profilePicture: uploadedUrl,
         );
-        debugPrint('ProfileScreen: Updated backend profile with userId: $userId');
+        debugPrint(
+          'ProfileScreen: Updated backend profile with userId: $userId',
+        );
+      } else {
+        debugPrint('ProfileScreen: Skipping save - invalid userId: $userId');
       }
+
       if (mounted) {
         setState(() {
           _profileImagePath = uploadedUrl;
           _selectedImage = null;
         });
+        debugPrint('ProfileScreen: UI updated with new image path');
       }
 
       if (mounted) {
@@ -511,7 +681,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('ProfileScreen: Error uploading profile picture: $e');
+      debugPrint('ProfileScreen: Stack trace: $stackTrace');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -556,6 +729,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 await authNotifier.logout();
 
                 if (!mounted) return;
+
+                ref.invalidate(favoritePetIdsProvider);
+                ref.invalidate(favoritePetsProvider);
+                ref.invalidate(userBookingsProvider);
 
                 // Pop the dialog using captured closure
                 popDialog();

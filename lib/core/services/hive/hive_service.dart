@@ -43,7 +43,9 @@ class HiveService {
     // accounts can be cached locally. Also keep the legacy key so existing
     // callers that rely on getAuthData() continue to work and return the
     // currently active user.
-    debugPrint('HiveService: Saving authData - authId: ${user.authId}, name: ${user.firstName} ${user.lastName}');
+    debugPrint(
+      'HiveService: Saving authData - authId: ${user.authId}, name: ${user.firstName} ${user.lastName}',
+    );
     if (user.authId != null && user.authId!.isNotEmpty) {
       await box.put(user.authId!, user);
     }
@@ -55,7 +57,9 @@ class HiveService {
   Future<AuthHiveModel?> getAuthData() async {
     final box = await Hive.openBox<AuthHiveModel>(HiveTableConstant.userTable);
     final user = box.get(HiveTableConstant.userTable);
-    debugPrint('HiveService: getAuthData - authId: ${user?.authId}, name: ${user?.firstName} ${user?.lastName}, email: ${user?.email}');
+    debugPrint(
+      'HiveService: getAuthData - authId: ${user?.authId}, name: ${user?.firstName} ${user?.lastName}, email: ${user?.email}',
+    );
     return user;
   }
 
@@ -91,32 +95,36 @@ class HiveService {
     await box.delete('auth_token');
   }
 
+  /// Save current authenticated user role (e.g., admin, adopter)
+  Future<void> saveUserRole(String role) async {
+    final box = await Hive.openBox<String>('token_box');
+    await box.put('auth_role', role);
+  }
+
+  /// Get current authenticated user role
+  Future<String?> getUserRole() async {
+    final box = await Hive.openBox<String>('token_box');
+    return box.get('auth_role');
+  }
+
+  /// Delete current authenticated user role
+  Future<void> deleteUserRole() async {
+    final box = await Hive.openBox<String>('token_box');
+    await box.delete('auth_role');
+  }
+
   /// Save profile picture URL/path for a given user id
   Future<void> saveProfilePicture(String authId, String imagePath) async {
     final box = await Hive.openBox<String>('profile_pictures');
     await box.put(authId, imagePath);
-    // Also store under the active user key so UI that reads the active
-    // record can still find the image when authId is missing or 'unknown'.
-    await box.put(HiveTableConstant.userTable, imagePath);
-    debugPrint(
-      'HiveService: saved profile picture for $authId -> $imagePath (also saved as active)',
-    );
+    debugPrint('HiveService: saved profile picture for $authId -> $imagePath');
   }
 
   /// Get saved profile picture for a given user id
   Future<String?> getProfilePicture(String authId) async {
     final box = await Hive.openBox<String>('profile_pictures');
-    // Try per-user first
     var val = box.get(authId);
-    if (val == null) {
-      // Fallback to active user's saved picture
-      val = box.get(HiveTableConstant.userTable);
-      debugPrint(
-        'HiveService: loaded profile picture for $authId -> null, fallback active -> $val',
-      );
-    } else {
-      debugPrint('HiveService: loaded profile picture for $authId -> $val');
-    }
+    debugPrint('HiveService: loaded profile picture for $authId -> $val');
     return val;
   }
 
@@ -125,5 +133,64 @@ class HiveService {
     final box = await Hive.openBox<String>('profile_pictures');
     await box.delete(authId);
     debugPrint('HiveService: deleted profile picture for $authId');
+  }
+
+  /// Save biometric login preference for a specific user.
+  Future<void> saveBiometricLoginEnabled(String authId, bool enabled) async {
+    final box = await Hive.openBox<bool>('biometric_prefs');
+    await box.put('biometric_enabled_$authId', enabled);
+    debugPrint(
+      'HiveService: biometric preference saved for $authId -> $enabled',
+    );
+  }
+
+  /// Read biometric login preference for a specific user.
+  Future<bool> isBiometricLoginEnabled(String authId) async {
+    final box = await Hive.openBox<bool>('biometric_prefs');
+    return box.get('biometric_enabled_$authId', defaultValue: false) ?? false;
+  }
+
+  /// Save token for biometric login (separate from regular token, not cleared on logout)
+  Future<void> saveBiometricToken(
+    String authId,
+    String token,
+    String role,
+  ) async {
+    final box = await Hive.openBox<String>('biometric_tokens');
+    await box.put('token_$authId', token);
+    await box.put('role_$authId', role);
+    debugPrint('HiveService: saved biometric token for $authId');
+  }
+
+  /// Get saved biometric token for a specific user
+  Future<Map<String, String>?> getBiometricToken(String authId) async {
+    final box = await Hive.openBox<String>('biometric_tokens');
+    final token = box.get('token_$authId');
+    final role = box.get('role_$authId');
+
+    if (token != null && role != null) {
+      return {'token': token, 'role': role};
+    }
+    return null;
+  }
+
+  /// Delete biometric token for a specific user
+  Future<void> deleteBiometricToken(String authId) async {
+    final box = await Hive.openBox<String>('biometric_tokens');
+    await box.delete('token_$authId');
+    await box.delete('role_$authId');
+    debugPrint('HiveService: deleted biometric token for $authId');
+  }
+
+  /// Save last logged in user ID (for biometric login after logout)
+  Future<void> saveLastBiometricUser(String authId) async {
+    final box = await Hive.openBox<String>('biometric_tokens');
+    await box.put('last_user', authId);
+  }
+
+  /// Get last logged in user ID (for biometric login after logout)
+  Future<String?> getLastBiometricUser() async {
+    final box = await Hive.openBox<String>('biometric_tokens');
+    return box.get('last_user');
   }
 }

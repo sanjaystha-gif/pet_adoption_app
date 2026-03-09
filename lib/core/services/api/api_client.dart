@@ -1,13 +1,32 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:pet_adoption_app/core/error/failure.dart';
 
 class ApiClient {
-  // For Android Emulator: use 10.0.2.2 (maps to host machine's localhost)
-  // For physical device: use actual IP address of backend
-  // For web/desktop: use localhost:5000
-  static const String baseUrl = 'http://10.0.2.2:5000/api/v1';
+  static const String _apiBaseUrlFromEnv = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: '',
+  );
+  static final String baseUrl = _apiBaseUrlFromEnv.isNotEmpty
+      ? _apiBaseUrlFromEnv
+      : _resolveDefaultBaseUrl();
 
   late Dio _dio;
+
+  static String _resolveDefaultBaseUrl() {
+    if (kIsWeb) return 'http://localhost:5000/api/v1';
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return 'http://10.0.2.2:5000/api/v1';
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+      case TargetPlatform.windows:
+      case TargetPlatform.linux:
+      case TargetPlatform.fuchsia:
+        return 'http://localhost:5000/api/v1';
+    }
+  }
 
   ApiClient() {
     _dio = Dio(

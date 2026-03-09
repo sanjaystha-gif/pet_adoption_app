@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pet_adoption_app/presentation/providers/favorites_provider.dart';
 import 'package:pet_adoption_app/presentation/screens/main/bookings/booking_form_screen.dart';
+import 'package:pet_adoption_app/presentation/widgets/smart_pet_image.dart';
 
 class PetDetailsScreen extends ConsumerStatefulWidget {
   final dynamic pet; // PetModel or PetEntity
@@ -103,17 +104,14 @@ class _PetDetailsScreenState extends ConsumerState<PetDetailsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Pet Image
-            Container(
+            SizedBox(
               width: double.infinity,
               height: 300,
-              color: Colors.grey[200],
-              child: Image.asset(
-                'assets/images/${_getPetValue('image')}',
+              child: SmartPetImage(
+                imageSource: _getPetValue('image'),
+                width: double.infinity,
+                height: 300,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.pets, size: 80, color: Colors.grey),
-                ),
               ),
             ),
             const SizedBox(height: 16),

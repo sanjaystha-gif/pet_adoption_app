@@ -56,8 +56,6 @@ class AdminAuthNotifier {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print('🔍 ADMIN LOGIN RESPONSE STATUS: ${response.statusCode}');
-        print('🔍 ADMIN LOGIN RESPONSE DATA: ${response.data}');
         // Robust token extraction: API may return token as a Map or String
         dynamic tokenRaw =
             response.data['token'] ??
@@ -76,13 +74,6 @@ class AdminAuthNotifier {
           token = tokenRaw?.toString();
         }
 
-        print('🔍 EXTRACTED ADMIN TOKEN: ${token != null}');
-        if (token != null && token.isNotEmpty) {
-          print(
-            '🔐 ADMIN TOKEN (truncated): ${token.substring(0, (token.length > 20) ? 20 : token.length)}...',
-          );
-        }
-
         if (token == null || token.isEmpty) {
           return AdminAuthState(
             isLoading: false,
@@ -93,20 +84,17 @@ class AdminAuthNotifier {
         final userData =
             response.data['adopter'] ?? response.data['user'] ?? response.data;
         if (userData == null || userData is! Map) {
-          print('❌ ADMIN LOGIN: Invalid user object in response');
           return AdminAuthState(
             isLoading: false,
             error: 'Invalid user data in response',
           );
         }
 
-        print('🔍 ADMIN LOGIN: userData keys: ${userData.keys.toList()}');
         // Check if user is admin
         final isAdmin =
             userData['role'] == 'admin' ||
             userData['isAdmin'] == true ||
             userData['admin'] == true;
-        print('🔍 ADMIN FLAG DETERMINED: $isAdmin');
 
         if (!isAdmin) {
           return AdminAuthState(
@@ -120,6 +108,7 @@ class AdminAuthNotifier {
         // Save admin token to both HiveService and ApiService
         await hiveService.saveToken(token);
         await apiService.saveToken(token);
+        await hiveService.saveUserRole('admin');
 
         // Create user entity
         // Normalize address field (server may return Map or String)
@@ -239,6 +228,7 @@ class AdminAuthNotifier {
     } finally {
       // Always clear local data
       await hiveService.deleteToken();
+      await hiveService.deleteUserRole();
       await hiveService.deleteAuthData();
     }
   }

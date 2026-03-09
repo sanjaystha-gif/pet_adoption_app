@@ -56,20 +56,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     try {
       final hive = HiveService();
       final hiveUser = await hive.getAuthData();
-      debugPrint('EditProfile: Loading image, hiveUser exists: ${hiveUser != null}');
+      debugPrint(
+        'EditProfile: Loading image, hiveUser exists: ${hiveUser != null}',
+      );
       debugPrint('EditProfile: authId = ${hiveUser?.authId}');
-      
-      // Try active user's profile picture first (fallback key)
-      var pic = await hive.getProfilePicture(HiveTableConstant.userTable);
-      
-      // If not found and we have a specific authId, try that
-      if (pic == null) {
-        final userId = hiveUser?.authId;
-        if (userId != null && userId.isNotEmpty && userId != 'unknown') {
-          pic = await hive.getProfilePicture(userId);
-        }
+
+      // Load profile picture for the specific user only
+      final userId = hiveUser?.authId;
+      String? pic;
+      if (userId != null && userId.isNotEmpty && userId != 'unknown') {
+        pic = await hive.getProfilePicture(userId);
       }
-      
+
       if (mounted && pic != null) {
         debugPrint('EditProfile: Setting profile image: $pic');
         setState(() => _profileImagePath = pic);
@@ -99,20 +97,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final hiveUser = await hive.getAuthData();
       final authNotifier = ref.read(authNotifierProvider);
       final userId = hiveUser?.authId;
-      
+
       debugPrint('EditProfile: Saving picture, userId: $userId');
 
       // Always save under the active user key for immediate access
       await hive.saveProfilePicture(HiveTableConstant.userTable, uploadedUrl);
-      
+      debugPrint('EditProfile: Saved to Hive under active user key');
+
       // Also save under specific userId if it's valid
       if (userId != null && userId.isNotEmpty && userId != 'unknown') {
         await hive.saveProfilePicture(userId, uploadedUrl);
+        debugPrint('EditProfile: Saved to Hive under userId: $userId');
+
         await authNotifier.updateUserProfile(
           userId: userId,
           profilePicture: uploadedUrl,
         );
         debugPrint('EditProfile: Updated backend profile with userId: $userId');
+      } else {
+        debugPrint(
+          'EditProfile: Skipping backend update - invalid userId: $userId',
+        );
       }
 
       if (mounted) {
@@ -132,7 +137,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           ),
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('EditProfile: Error uploading profile picture: $e');
+      debugPrint('EditProfile: Stack trace: $stackTrace');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
