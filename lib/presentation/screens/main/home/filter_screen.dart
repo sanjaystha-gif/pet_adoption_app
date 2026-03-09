@@ -2,8 +2,15 @@ import 'package:flutter/material.dart';
 
 class FilterScreen extends StatefulWidget {
   final Map<String, dynamic> currentFilters;
+  final List<String> availableCategories;
+  final List<String> availableBreeds;
 
-  const FilterScreen({super.key, required this.currentFilters});
+  const FilterScreen({
+    super.key,
+    required this.currentFilters,
+    this.availableCategories = const ['All'],
+    this.availableBreeds = const ['All'],
+  });
 
   @override
   State<FilterScreen> createState() => _FilterScreenState();
@@ -16,24 +23,40 @@ class _FilterScreenState extends State<FilterScreen> {
   late String _selectedGender;
   late RangeValues _priceRange;
 
-  final List<String> _categories = ['All', 'Dogs', 'Cats', 'Rabbits', 'Birds'];
-  final List<String> _breeds = [
-    'All',
-    'German Shepherd',
-    'Labrador',
-    'Beagle',
-    'Poodle',
-    'Golden Retriever',
-    'Bulldog',
-  ];
+  List<String> get _categories {
+    if (widget.availableCategories.isEmpty) {
+      return const ['All'];
+    }
+
+    final values = <String>{'All', ...widget.availableCategories};
+    final sorted = values.where((value) => value != 'All').toList()..sort();
+    return ['All', ...sorted];
+  }
+
+  List<String> get _breeds {
+    if (widget.availableBreeds.isEmpty) {
+      return const ['All'];
+    }
+
+    final values = <String>{'All', ...widget.availableBreeds};
+    final sorted = values.where((value) => value != 'All').toList()..sort();
+    return ['All', ...sorted];
+  }
+
   final List<String> _ages = ['All', 'Puppy', 'Young', 'Adult', 'Senior'];
   final List<String> _genders = ['All', 'Male', 'Female'];
 
   @override
   void initState() {
     super.initState();
-    _selectedCategory = widget.currentFilters['category'] ?? 'All';
-    _selectedBreed = widget.currentFilters['breed'] ?? 'All';
+    final initialCategory = (widget.currentFilters['category'] ?? 'All')
+        .toString();
+    final initialBreed = (widget.currentFilters['breed'] ?? 'All').toString();
+
+    _selectedCategory = _categories.contains(initialCategory)
+        ? initialCategory
+        : 'All';
+    _selectedBreed = _breeds.contains(initialBreed) ? initialBreed : 'All';
     _selectedAge = widget.currentFilters['age'] ?? 'All';
     _selectedGender = widget.currentFilters['gender'] ?? 'All';
     _priceRange =

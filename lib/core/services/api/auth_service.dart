@@ -16,7 +16,9 @@ class AuthService {
   // API endpoints matching Node.js backend routes
   static const String _studentsEndpoint = '/students';
   static const String _loginEndpoint = '/students/login';
-  static const String _uploadProfileEndpoint = '/students/upload';
+  static const String _uploadProfileEndpoint = '/pets/items/upload-photo';
+  static const String _uploadProfileEndpointAlt =
+      '/adopters/upload-profile-picture';
 
   AuthService({required ApiService apiService}) : _apiService = apiService;
 
@@ -270,27 +272,95 @@ class AuthService {
   ///
   /// Uploads a profile picture for the authenticated user.
   Future<String> uploadProfilePicture({required String filePath}) async {
-    try {
-      final response = await _apiService.uploadFile(
-        _uploadProfileEndpoint,
-        filePath: filePath,
-        fieldName: 'profilePicture',
-      );
+    // ignore: avoid_print
+    print('🖼️ AuthService: Uploading profile picture from: $filePath');
 
-      if (response.statusCode == 200) {
-        return response.data['data'] ?? response.data['message'];
+    final attempts = <({String endpoint, String fieldName})>[
+      (endpoint: _uploadProfileEndpointAlt, fieldName: 'profilePicture'),
+      (endpoint: _uploadProfileEndpointAlt, fieldName: 'media'),
+      (endpoint: _uploadProfileEndpoint, fieldName: 'media'),
+      (endpoint: _uploadProfileEndpoint, fieldName: 'profilePicture'),
+    ];
+
+    ApiFailure? lastFailure;
+
+    for (final attempt in attempts) {
+      try {
+        // ignore: avoid_print
+        print(
+          '🖼️ AuthService: Trying endpoint=${attempt.endpoint}, field=${attempt.fieldName}',
+        );
+
+        final response = await _apiService.uploadFileAuth(
+          attempt.endpoint,
+          filePath: filePath,
+          fieldName: attempt.fieldName,
+          timeout: const Duration(seconds: 20),
+        );
+
+        // ignore: avoid_print
+        print(
+          '🖼️ AuthService: Upload response status: ${response.statusCode}',
+        );
+        // ignore: avoid_print
+        print('🖼️ AuthService: Upload response data: ${response.data}');
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final data = response.data;
+
+          dynamic url;
+          if (data is Map<String, dynamic>) {
+            url =
+                data['data'] ??
+                data['url'] ??
+                data['mediaUrl'] ??
+                data['profilePicture'];
+
+            if (url is Map<String, dynamic>) {
+              url =
+                  url['url'] ??
+                  url['mediaUrl'] ??
+                  url['profilePicture'] ??
+                  url['secure_url'];
+            }
+          }
+
+          // ignore: avoid_print
+          print('🖼️ AuthService: Extracted URL: $url');
+
+          if (url != null && url.toString().trim().isNotEmpty) {
+            return url.toString();
+          }
+
+          throw ApiFailure(
+            message:
+                'Upload succeeded but no URL field found in response for ${attempt.endpoint}',
+            statusCode: response.statusCode,
+          );
+        }
+
+        throw ApiFailure(
+          message: 'Profile picture upload failed (${response.statusCode})',
+          statusCode: response.statusCode,
+        );
+      } on ApiFailure catch (e) {
+        lastFailure = e;
+        // ignore: avoid_print
+        print(
+          '🖼️ AuthService: Attempt failed endpoint=${attempt.endpoint}, field=${attempt.fieldName}, error=${e.message}',
+        );
+      } catch (e) {
+        lastFailure = ApiFailure(
+          message: 'Upload profile picture error: ${e.toString()}',
+        );
+        // ignore: avoid_print
+        print(
+          '🖼️ AuthService: Attempt exception endpoint=${attempt.endpoint}, field=${attempt.fieldName}, error=$e',
+        );
       }
-
-      throw ApiFailure(
-        message: response.data['message'] ?? 'Profile picture upload failed',
-        statusCode: response.statusCode,
-      );
-    } on ApiFailure {
-      rethrow;
-    } catch (e) {
-      throw ApiFailure(
-        message: 'Upload profile picture error: ${e.toString()}',
-      );
     }
+
+    throw lastFailure ??
+        ApiFailure(message: 'Profile picture upload failed after all attempts');
   }
 }

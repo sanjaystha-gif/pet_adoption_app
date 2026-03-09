@@ -5,6 +5,8 @@ import 'admin_login_screen.dart';
 import 'package:pet_adoption_app/presentation/screens/main/main_navigation_screen.dart';
 import 'package:pet_adoption_app/presentation/providers/user_provider.dart';
 import 'package:pet_adoption_app/features/auth/presentation/notifiers/auth_notifier.dart';
+import 'package:pet_adoption_app/presentation/providers/booking_provider.dart';
+import 'package:pet_adoption_app/presentation/providers/favorites_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -73,6 +75,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       setState(() => _isLoading = false);
 
       if (authState.isAuthenticated && mounted) {
+        ref.invalidate(favoritePetIdsProvider);
+        ref.invalidate(favoritePetsProvider);
+        ref.invalidate(userBookingsProvider);
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => MainNavigationScreen(

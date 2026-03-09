@@ -10,18 +10,66 @@ class PetApiClient {
 
   Future<List<PetModel>> getAllPets() async {
     try {
-      // Use the ApiService's Dio instance to get pets
-      final response = await apiService.dio.get('/items');
+      const endpoint = '/items';
+      final queryParameters = {'feed': 'adoption'};
+      final requestedUrl =
+          '${ApiService.baseUrl}$endpoint?feed=${queryParameters['feed']}';
+
+      // ignore: avoid_print
+      print('[AdopterPets] URL requested: $requestedUrl');
+
+      dynamic response;
+      try {
+        response = await apiService.dio.get(
+          endpoint,
+          queryParameters: queryParameters,
+        );
+      } catch (e) {
+        // Fallback to public client in case auth token is missing/expired.
+        // ignore: avoid_print
+        print('[AdopterPets] Auth GET failed, retrying public GET: $e');
+        response = await apiService.get(
+          endpoint,
+          queryParameters: queryParameters,
+        );
+      }
+
+      // ignore: avoid_print
+      print('[AdopterPets] Status code: ${response.statusCode}');
+
+      final rawBody = response.data.toString();
+      final preview = rawBody.length > 500
+          ? '${rawBody.substring(0, 500)}...'
+          : rawBody;
+      // ignore: avoid_print
+      print('[AdopterPets] Raw response (first 500 chars): $preview');
 
       if (response.statusCode == 200) {
-        final List<dynamic> petsList =
-            response.data['data'] ?? response.data ?? [];
+        final dynamic body = response.data;
+        dynamic dataNode;
+        if (body is Map) {
+          dataNode = body['data'];
+          if (dataNode is Map) {
+            dataNode =
+                dataNode['items'] ??
+                dataNode['docs'] ??
+                dataNode['results'] ??
+                dataNode['pets'];
+          }
+        } else {
+          dataNode = body;
+        }
 
-        if (petsList.isNotEmpty) {}
+        final List<dynamic> petsList = dataNode is List
+            ? dataNode
+            : <dynamic>[];
+
+        // ignore: avoid_print
+        print('[AdopterPets] Parsed list length: ${petsList.length}');
 
         final parsedPets = petsList.map((pet) {
           try {
-            return PetModel.fromJson(pet as Map<String, dynamic>);
+            return PetModel.fromJson(Map<String, dynamic>.from(pet as Map));
           } catch (e) {
             rethrow;
           }
@@ -32,6 +80,8 @@ class PetApiClient {
 
       return [];
     } catch (e) {
+      // ignore: avoid_print
+      print('[AdopterPets] getAllPets error: $e');
       return [];
     }
   }
@@ -115,26 +165,8 @@ final adminUpdatedPetsProvider = FutureProvider<List<PetModel>>((ref) async {
 final userPetsProvider = FutureProvider<List<PetModel>>((ref) async {
   final petApiClient = ref.watch(petApiClientProvider);
   try {
-    final pets = await petApiClient.getAllPets();
-
-    print('🐾 DEBUG: Total pets from API: ${pets.length}');
-
-    // Show all available pets for adoption (no demo/seed data in DB anymore)
-    final filtered = pets.where((pet) {
-      final type = pet.type.trim().toLowerCase();
-      final isAvailable = type == 'available' && !pet.isAdopted;
-
-      print(
-        '🐾 Pet: ${pet.name} | Type: "${pet.type}" | isAdopted: ${pet.isAdopted} | Passes: $isAvailable',
-      );
-
-      return isAvailable;
-    }).toList();
-
-    print('🐾 DEBUG: Filtered pets for adopters: ${filtered.length}');
-    return filtered;
+    return await petApiClient.getAllPets();
   } catch (e) {
-    print('❌ Error in userPetsProvider: $e');
     return [];
   }
 });

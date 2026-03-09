@@ -17,7 +17,7 @@ class PetService {
   // API endpoints matching Node.js backend routes
   // The backend uses "items" terminology, we map it to "pets"
   static const String _itemsEndpoint = '/items';
-  static const String _uploadPhotoEndpoint = '/items/upload-photo';
+  static const String _uploadPhotoEndpoint = '/pets/items/upload-photo';
   static const String _uploadVideoEndpoint = '/items/upload-video';
 
   PetService({required ApiService apiService}) : _apiService = apiService;
@@ -39,32 +39,48 @@ class PetService {
     String? gender,
     String? size,
     String? healthStatus,
+    String? species,
     required String userId, // postedBy/reportedBy
   }) async {
     try {
-      final response = await _apiService.postAuth(
-        _itemsEndpoint,
-        data: {
-          'itemName': name,
-          'name': name,
-          'description': description,
-          'type': type,
-          'species': 'dog',
-          'category': categoryId,
-          'location': location,
-          'media': mediaUrl,
-          'mediaUrl': mediaUrl,
-          'mediaType': mediaType,
-          'breed': breed ?? '',
-          'age': age ?? 0,
-          'gender': (gender ?? '').toLowerCase(),
-          'size': size ?? '',
-          'healthStatus': healthStatus ?? 'healthy',
-          'postedBy': userId,
-        },
-      );
+      final normalizedMedia = _normalizeMediaForApi(mediaUrl);
+      final payload = {
+        'itemName': name,
+        'description': description,
+        'type': type,
+        'species': species ?? 'dog',
+        'category': categoryId,
+        'location': location,
+        'mediaUrl': normalizedMedia,
+        'mediaType': mediaType,
+        'breed': breed ?? '',
+        'age': age ?? 0,
+        'gender': (gender ?? '').toLowerCase(),
+        'postedBy': userId,
+      };
 
-      if (response.statusCode == 201) {
+      // ignore: avoid_print
+      print('[Pet] PetService: Creating pet with payload: $payload');
+
+      final response = await _apiService
+          .postAuth(_itemsEndpoint, data: payload)
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              throw ApiFailure(
+                message:
+                    'Request timed out after 15 seconds. Please check your connection and try again.',
+                statusCode: 408,
+              );
+            },
+          );
+
+      // ignore: avoid_print
+      print('[Pet] PetService: Create response status: ${response.statusCode}');
+      // ignore: avoid_print
+      print('[Pet] PetService: Create response data: ${response.data}');
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
         final petModel = PetModel.fromJson(
           response.data['data'] ?? response.data,
         );
@@ -78,6 +94,8 @@ class PetService {
     } on ApiFailure {
       rethrow;
     } catch (e) {
+      // ignore: avoid_print
+      print('[Pet] PetService: Create pet error: $e');
       throw ApiFailure(message: 'Create pet error: ${e.toString()}');
     }
   }
@@ -176,23 +194,22 @@ class PetService {
     String? gender,
     String? size,
     String? healthStatus,
+    String? species,
     bool? isAdopted,
     String? adoptedBy,
     String? status,
   }) async {
     try {
       final data = <String, dynamic>{};
-      if (name != null) {
-        data['itemName'] = name;
-        data['name'] = name;
-      }
+      if (name != null) data['itemName'] = name;
       if (description != null) data['description'] = description;
       if (type != null) data['type'] = type;
+      if (species != null) data['species'] = species;
       if (categoryId != null) data['category'] = categoryId;
       if (location != null) data['location'] = location;
       if (mediaUrl != null) {
-        data['media'] = mediaUrl;
-        data['mediaUrl'] = mediaUrl;
+        final normalizedMedia = _normalizeMediaForApi(mediaUrl);
+        data['mediaUrl'] = normalizedMedia;
       }
       if (mediaType != null) data['mediaType'] = mediaType;
       if (breed != null) data['breed'] = breed;
@@ -200,20 +217,30 @@ class PetService {
       if (gender != null) data['gender'] = gender.toLowerCase();
       if (size != null) data['size'] = size;
       if (healthStatus != null) data['healthStatus'] = healthStatus;
-      if (isAdopted != null) {
-        data['isClaimed'] = isAdopted;
-        data['isAdopted'] = isAdopted;
-      }
-      if (adoptedBy != null) {
-        data['claimedBy'] = adoptedBy;
-        data['adoptedBy'] = adoptedBy;
-      }
+      if (isAdopted != null) data['isAdopted'] = isAdopted;
+      if (adoptedBy != null) data['adoptedBy'] = adoptedBy;
       if (status != null) data['status'] = status;
 
-      final response = await _apiService.putAuth(
-        '$_itemsEndpoint/$petId',
-        data: data,
-      );
+      // ignore: avoid_print
+      print('[Pet] PetService: Updating pet $petId with data: $data');
+
+      final response = await _apiService
+          .putAuth('$_itemsEndpoint/$petId', data: data)
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              throw ApiFailure(
+                message:
+                    'Request timed out after 15 seconds. Please check your connection and try again.',
+                statusCode: 408,
+              );
+            },
+          );
+
+      // ignore: avoid_print
+      print('[Pet] PetService: Update response status: ${response.statusCode}');
+      // ignore: avoid_print
+      print('[Pet] PetService: Update response data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         try {
@@ -272,7 +299,14 @@ class PetService {
   /// Requires authentication.
   Future<void> deletePet({required String petId}) async {
     try {
-      final response = await _apiService.deleteAuth('$_itemsEndpoint/$petId');
+      final normalizedId = petId.trim();
+      if (normalizedId.isEmpty || normalizedId.toLowerCase() == 'null') {
+        throw const ApiFailure(message: 'Invalid pet ID for deletion');
+      }
+
+      final response = await _apiService.deleteAuth(
+        '$_itemsEndpoint/$normalizedId',
+      );
 
       // Accept 200, 201, or 204 as successful deletion
       if (response.statusCode == 200 ||
@@ -298,14 +332,76 @@ class PetService {
   /// Returns the filename of the uploaded image.
   Future<String> uploadPhoto({required String filePath}) async {
     try {
-      final response = await _apiService.uploadFile(
-        _uploadPhotoEndpoint,
-        filePath: filePath,
-        fieldName: 'media',
-      );
+      // ignore: avoid_print
+      print('📤 PetService: Starting upload for: $filePath');
 
-      if (response.statusCode == 200) {
-        return response.data['data'] ?? response.data['message'];
+      // Try authenticated upload first (admin flow), then public upload fallback.
+      late final dynamic response;
+      try {
+        // ignore: avoid_print
+        print('📤 PetService: Attempting authenticated upload...');
+        response = await _apiService
+            .uploadFileAuth(
+              _uploadPhotoEndpoint,
+              filePath: filePath,
+              fieldName: 'media',
+              timeout: const Duration(seconds: 20),
+            )
+            .timeout(
+              const Duration(seconds: 20),
+              onTimeout: () {
+                throw ApiFailure(
+                  message:
+                      'Upload timed out after 20 seconds. Backend may not be responding.',
+                  statusCode: 408,
+                );
+              },
+            );
+        // ignore: avoid_print
+        print('[Success] PetService: Authenticated upload succeeded');
+      } catch (authError) {
+        // ignore: avoid_print
+        print('[Warning] PetService: Auth upload failed: $authError');
+        // ignore: avoid_print
+        print('[Upload] PetService: Attempting public upload fallback...');
+        response = await _apiService
+            .uploadFile(
+              _uploadPhotoEndpoint,
+              filePath: filePath,
+              fieldName: 'media',
+              timeout: const Duration(seconds: 20),
+            )
+            .timeout(
+              const Duration(seconds: 20),
+              onTimeout: () {
+                throw ApiFailure(
+                  message:
+                      'Upload timed out after 20 seconds. Backend may not be responding.',
+                  statusCode: 408,
+                );
+              },
+            );
+        // ignore: avoid_print
+        print('[Success] PetService: Public upload succeeded');
+      }
+
+      // ignore: avoid_print
+      print(
+        '[Upload] PetService: Upload response status: ${response.statusCode}',
+      );
+      // ignore: avoid_print
+      print('[Upload] PetService: Upload response data: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final extracted = _extractMediaUrl(response.data);
+        // ignore: avoid_print
+        print('[Upload] PetService: Extracted URL: $extracted');
+
+        if (extracted != null && extracted.isNotEmpty) {
+          return _normalizeMediaForApi(extracted);
+        }
+
+        throw ApiFailure(message: 'No URL returned from upload');
       }
 
       throw ApiFailure(
@@ -315,8 +411,71 @@ class PetService {
     } on ApiFailure {
       rethrow;
     } catch (e) {
+      // ignore: avoid_print
+      print('[Error] PetService: Upload error: $e');
       throw ApiFailure(message: 'Upload photo error: ${e.toString()}');
     }
+  }
+
+  String? _extractMediaUrl(dynamic data) {
+    if (data == null) return null;
+
+    if (data is String) {
+      final value = data.trim();
+      if (value.isEmpty) return null;
+      // Guard against generic success messages being stored as media path.
+      final lower = value.toLowerCase();
+      if (lower.contains('success') && !value.contains('http')) {
+        return null;
+      }
+
+      // Normalize stringified list values like: [https://...]
+      if (value.startsWith('[') && value.endsWith(']')) {
+        final inner = value.substring(1, value.length - 1).trim();
+        if (inner.isNotEmpty) {
+          return inner.replaceAll('"', '').replaceAll("'", '');
+        }
+      }
+      return value;
+    }
+
+    if (data is List) {
+      for (final item in data) {
+        final candidate = _extractMediaUrl(item);
+        if (candidate != null && candidate.isNotEmpty) return candidate;
+      }
+      return null;
+    }
+
+    if (data is Map) {
+      final candidates = [
+        data['data'],
+        data['url'],
+        data['media'],
+        data['mediaUrl'],
+        data['secure_url'],
+        data['image'],
+        data['file'],
+      ];
+
+      for (final candidate in candidates) {
+        final extracted = _extractMediaUrl(candidate);
+        if (extracted != null && extracted.isNotEmpty) return extracted;
+      }
+
+      return null;
+    }
+
+    return data.toString();
+  }
+
+  String _normalizeMediaForApi(String value) {
+    var normalized = value.trim();
+    if (normalized.startsWith('[') && normalized.endsWith(']')) {
+      normalized = normalized.substring(1, normalized.length - 1).trim();
+    }
+    normalized = normalized.replaceAll('"', '').replaceAll("'", '').trim();
+    return normalized;
   }
 
   /// Upload pet video

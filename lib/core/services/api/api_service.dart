@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pet_adoption_app/core/error/failure.dart';
 
@@ -9,10 +10,14 @@ import 'package:pet_adoption_app/core/error/failure.dart';
 /// and rate limiting support following the Node.js API architecture.
 class ApiService {
   // API Configuration - matches Node.js backend
-  static const String baseUrl = 'http://10.0.2.2:5000/api/v1';
-  // For Android Emulator: 10.0.2.2 points to host computer
-  // For physical device or web: use your actual backend URL
-  // Example: 'https://your-api.com/api/v1'
+  static const String _apiBaseUrlFromEnv = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: '',
+  );
+  static final String baseUrl = _apiBaseUrlFromEnv.isNotEmpty
+      ? _apiBaseUrlFromEnv
+      : _resolveDefaultBaseUrl();
+  // Override with --dart-define=API_BASE_URL=http://<host>:5000/api/v1
 
   static const String apiVersion = '/v1';
   static const int connectionTimeout = 30000; // milliseconds
@@ -33,6 +38,22 @@ class ApiService {
 
   factory ApiService() {
     return _instance;
+  }
+
+  static String _resolveDefaultBaseUrl() {
+    // Default to localhost for web/desktop; Android emulator requires 10.0.2.2.
+    if (kIsWeb) return 'http://localhost:5000/api/v1';
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return 'http://10.0.2.2:5000/api/v1';
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+      case TargetPlatform.windows:
+      case TargetPlatform.linux:
+      case TargetPlatform.fuchsia:
+        return 'http://localhost:5000/api/v1';
+    }
   }
 
   /// Initialize Dio instances with base configuration
@@ -84,14 +105,14 @@ class ApiService {
       onRequest: (options, handler) async {
         final token = await getStoredToken();
         // ignore: avoid_print
-        print('🔐 Auth Interceptor - Token found: ${token != null}');
+        print('[Auth] Interceptor - Token found: ${token != null}');
         if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
           // ignore: avoid_print
-          print('🔐 Auth Interceptor - Token added to headers');
+          print('[Auth] Interceptor - Token added to headers');
         } else {
           // ignore: avoid_print
-          print('🔐 Auth Interceptor - NO TOKEN FOUND');
+          print('[Auth] Interceptor - NO TOKEN FOUND');
         }
         return handler.next(options);
       },
@@ -363,6 +384,7 @@ class ApiService {
     required String filePath,
     required String fieldName,
     Map<String, dynamic>? additionalFields,
+    Duration? timeout,
   }) async {
     try {
       final file = await MultipartFile.fromFile(filePath);
@@ -372,7 +394,15 @@ class ApiService {
         if (additionalFields != null) ...additionalFields,
       });
 
-      final response = await _dioWithAuth.post(endpoint, data: formData);
+      final response = await _dioWithAuth.post(
+        endpoint,
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+          sendTimeout: timeout,
+          receiveTimeout: timeout,
+        ),
+      );
       return response;
     } on DioException catch (e) {
       throw ApiFailure(
@@ -388,6 +418,7 @@ class ApiService {
     required String filePath,
     required String fieldName,
     Map<String, dynamic>? additionalFields,
+    Duration? timeout,
   }) async {
     try {
       final file = await MultipartFile.fromFile(filePath);
@@ -397,7 +428,15 @@ class ApiService {
         if (additionalFields != null) ...additionalFields,
       });
 
-      final response = await _dio.post(endpoint, data: formData);
+      final response = await _dio.post(
+        endpoint,
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+          sendTimeout: timeout,
+          receiveTimeout: timeout,
+        ),
+      );
       return response;
     } on DioException catch (e) {
       throw ApiFailure(
@@ -442,7 +481,7 @@ class ApiService {
       case DioExceptionType.badCertificate:
         return 'Bad certificate error.';
       case DioExceptionType.connectionError:
-        return 'Connection error. Please check your internet connection.';
+        return 'Connection failed to $baseUrl. If you are using a physical phone, run with --dart-define=API_BASE_URL=http://<your-pc-lan-ip>:5000/api/v1.';
       case DioExceptionType.unknown:
         return 'An unknown error occurred.';
     }

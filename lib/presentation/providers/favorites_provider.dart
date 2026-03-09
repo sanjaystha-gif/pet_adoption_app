@@ -63,12 +63,17 @@ class FavoritePetIdsNotifier extends AsyncNotifier<Set<String>> {
     final hiveService = ref.read(hiveServiceProvider);
     final auth = await hiveService.getAuthData();
     final authId = (auth?.authId ?? '').trim();
+    final email = (auth?.email ?? '').trim().toLowerCase();
 
-    if (authId.isEmpty) {
-      return 'favorite_pet_ids_guest';
+    if (authId.isNotEmpty && authId.toLowerCase() != 'unknown') {
+      return 'favorite_pet_ids_$authId';
     }
 
-    return 'favorite_pet_ids_$authId';
+    if (email.isNotEmpty) {
+      return 'favorite_pet_ids_email_$email';
+    }
+
+    return 'favorite_pet_ids_guest';
   }
 }
 

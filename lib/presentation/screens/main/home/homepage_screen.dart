@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pet_adoption_app/core/services/hive/hive_service.dart';
 import 'package:pet_adoption_app/presentation/providers/favorites_provider.dart';
 import 'package:pet_adoption_app/presentation/providers/pet_provider.dart';
 import 'package:pet_adoption_app/presentation/providers/user_provider.dart';
@@ -18,6 +21,20 @@ class HomePageScreen extends ConsumerStatefulWidget {
 class _HomePageScreenState extends ConsumerState<HomePageScreen> {
   static const Color _accent = Color(0xFFF67D2C);
 
+  Future<String?> _getHomeProfileImagePath() async {
+    final hive = ref.read(hiveServiceProvider);
+    final hiveUser = await hive.getAuthData();
+
+    // Load profile picture for the specific user only
+    final userId = hiveUser?.authId;
+    String? pic;
+    if (userId != null && userId.isNotEmpty && userId != 'unknown') {
+      pic = await hive.getProfilePicture(userId);
+    }
+
+    return pic;
+  }
+
   /// Current filter values
   Map<String, dynamic> _currentFilters = {
     'category': 'All',
@@ -32,28 +49,46 @@ class _HomePageScreenState extends ConsumerState<HomePageScreen> {
     return pets.where((pet) {
       // Category filter
       if (_currentFilters['category'] != 'All') {
-        if (pet.category != _currentFilters['category']) {
+        if (!_matchesCategoryFilter(
+          pet,
+          _currentFilters['category'].toString(),
+        )) {
           return false;
         }
       }
 
       // Breed filter
       if (_currentFilters['breed'] != 'All') {
-        if (pet.breed != _currentFilters['breed']) {
+        final petBreed = (pet.breed ?? '').toString().toLowerCase().trim();
+        final selectedBreed = _currentFilters['breed']
+            .toString()
+            .toLowerCase()
+            .trim();
+        final breedMatched =
+            petBreed == selectedBreed ||
+            petBreed.contains(selectedBreed) ||
+            selectedBreed.contains(petBreed);
+        if (!breedMatched) {
           return false;
         }
       }
 
       // Age filter
       if (_currentFilters['age'] != 'All') {
-        if (pet.age != _currentFilters['age']) {
+        final petAgeCategory = _ageCategoryFromValue(pet.age);
+        if (petAgeCategory != _currentFilters['age']) {
           return false;
         }
       }
 
       // Gender filter
       if (_currentFilters['gender'] != 'All') {
-        if (pet.gender != _currentFilters['gender']) {
+        final petGender = (pet.gender ?? '').toString().toLowerCase().trim();
+        final selectedGender = _currentFilters['gender']
+            .toString()
+            .toLowerCase()
+            .trim();
+        if (petGender != selectedGender) {
           return false;
         }
       }
@@ -62,10 +97,107 @@ class _HomePageScreenState extends ConsumerState<HomePageScreen> {
     }).toList();
   }
 
+  bool _matchesCategoryFilter(dynamic pet, String selectedCategory) {
+    final selected = selectedCategory.toLowerCase().trim();
+    final categoryRaw = (pet.category ?? '').toString().toLowerCase().trim();
+
+    if (selected == 'dogs') {
+      return categoryRaw == 'dogs' ||
+          categoryRaw == 'dog' ||
+          categoryRaw.contains('dog');
+    }
+
+    if (selected == 'cats') {
+      return categoryRaw == 'cats' ||
+          categoryRaw == 'cat' ||
+          categoryRaw.contains('cat');
+    }
+
+    return categoryRaw == selected;
+  }
+
+  String _ageCategoryFromValue(dynamic ageValue) {
+    final intAge = int.tryParse(ageValue.toString()) ?? 0;
+    if (intAge <= 1) return 'Puppy';
+    if (intAge <= 3) return 'Young';
+    if (intAge <= 8) return 'Adult';
+    return 'Senior';
+  }
+
+  void _setQuickCategory(String category) {
+    setState(() {
+      _currentFilters = {..._currentFilters, 'category': category};
+    });
+  }
+
+  String _normalizeCategoryLabel(String rawValue) {
+    final value = rawValue.toLowerCase().trim();
+    if (value.isEmpty) return '';
+
+    if (value == 'dog' || value == 'dogs' || value.contains('dog')) {
+      return 'Dogs';
+    }
+    if (value == 'cat' || value == 'cats' || value.contains('cat')) {
+      return 'Cats';
+    }
+
+    final cleaned = value.replaceAll('_', ' ');
+    return cleaned
+        .split(' ')
+        .where((part) => part.isNotEmpty)
+        .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
+        .join(' ');
+  }
+
+  List<String> _availableCategories(List<dynamic> pets) {
+    final categories = <String>{'All'};
+
+    for (final pet in pets) {
+      final rawCategory = (pet.category ?? '').toString();
+      final normalized = _normalizeCategoryLabel(rawCategory);
+      if (normalized.isNotEmpty) {
+        categories.add(normalized);
+      }
+    }
+
+    final sorted = categories.where((value) => value != 'All').toList()..sort();
+    return ['All', ...sorted];
+  }
+
+  List<String> _availableBreeds(List<dynamic> pets) {
+    final breeds = <String>{'All'};
+
+    for (final pet in pets) {
+      final breed = (pet.breed ?? '').toString().trim();
+      if (breed.isNotEmpty) {
+        breeds.add(breed);
+      }
+    }
+
+    final sorted = breeds.where((value) => value != 'All').toList()..sort();
+    return ['All', ...sorted];
+  }
+
   void _openFilterScreen() async {
+    List<dynamic> pets = <dynamic>[];
+    try {
+      pets = await ref.read(userPetsProvider.future);
+    } catch (_) {
+      // If fetching fails, filter screen still opens with default options.
+    }
+
+    final categories = _availableCategories(pets);
+    final breeds = _availableBreeds(pets);
+
+    if (!mounted) return;
+
     final result = await Navigator.of(context).push<Map<String, dynamic>>(
       MaterialPageRoute(
-        builder: (_) => FilterScreen(currentFilters: _currentFilters),
+        builder: (_) => FilterScreen(
+          currentFilters: _currentFilters,
+          availableCategories: categories,
+          availableBreeds: breeds,
+        ),
       ),
     );
 
@@ -97,19 +229,45 @@ class _HomePageScreenState extends ConsumerState<HomePageScreen> {
                     icon: const Icon(Icons.arrow_back_ios),
                   ),
                   const SizedBox(width: 8),
-                  // Profile avatar with default icon
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.person,
-                      size: 24,
-                      color: Colors.grey[600],
-                    ),
+                  FutureBuilder<String?>(
+                    future: _getHomeProfileImagePath(),
+                    builder: (context, snapshot) {
+                      final imagePath = snapshot.data;
+
+                      if (imagePath != null && imagePath.isNotEmpty) {
+                        if (imagePath.startsWith('http://') ||
+                            imagePath.startsWith('https://')) {
+                          return CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.grey[200],
+                            backgroundImage: NetworkImage(imagePath),
+                          );
+                        }
+
+                        final file = File(imagePath);
+                        if (file.existsSync()) {
+                          return CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.grey[200],
+                            backgroundImage: FileImage(file),
+                          );
+                        }
+                      }
+
+                      return Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.person,
+                          size: 24,
+                          color: Colors.grey[600],
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -143,6 +301,16 @@ class _HomePageScreenState extends ConsumerState<HomePageScreen> {
                     },
                     icon: const Icon(Icons.refresh),
                   ),
+                  IconButton(
+                    onPressed: () async {
+                      final pets = await ref.read(userPetsProvider.future);
+                      // ignore: avoid_print
+                      print(
+                        '[AdopterPets] Temporary debug action - parsed pets length: ${pets.length}',
+                      );
+                    },
+                    icon: const Icon(Icons.bug_report_outlined),
+                  ),
                 ],
               ),
             ),
@@ -174,13 +342,22 @@ class _HomePageScreenState extends ConsumerState<HomePageScreen> {
                             _CategoryChip(
                               label: 'Dogs',
                               icon: Icons.pets,
-                              active: true,
+                              active: _currentFilters['category'] == 'Dogs',
+                              onTap: () => _setQuickCategory('Dogs'),
                             ),
                             const SizedBox(width: 8),
                             _CategoryChip(
                               label: 'Cats',
                               icon: Icons.pets,
-                              active: false,
+                              active: _currentFilters['category'] == 'Cats',
+                              onTap: () => _setQuickCategory('Cats'),
+                            ),
+                            const SizedBox(width: 8),
+                            _CategoryChip(
+                              label: 'All',
+                              icon: Icons.grid_view_rounded,
+                              active: _currentFilters['category'] == 'All',
+                              onTap: () => _setQuickCategory('All'),
                             ),
                           ],
                         ),
@@ -316,6 +493,9 @@ class _HomePageScreenState extends ConsumerState<HomePageScreen> {
                               itemBuilder: (context, idx) {
                                 final pet = filteredPets[idx];
                                 return _PetCard(
+                                  key: ValueKey(
+                                    '${(pet.id ?? '').toString()}_${(pet.imageUrl ?? '').toString()}',
+                                  ),
                                   pet: pet,
                                   imageName: pet.imageUrl ?? 'main_logo.png',
                                 );
@@ -337,47 +517,56 @@ class _CategoryChip extends StatelessWidget {
   final String label;
   final IconData icon;
   final bool active;
+  final VoidCallback? onTap;
 
   const _CategoryChip({
     required this.label,
     required this.icon,
     this.active = false,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: active ? const Color(0xFFFFF1EA) : Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: active
-            ? []
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 6,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: active ? const Color(0xFFFFF1EA) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: active
+                ? []
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 6,
+                    ),
+                  ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: active ? const Color(0xFFF67D2C) : Colors.grey[700],
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Aclonica',
+                  fontSize: 13,
+                  color: active ? const Color(0xFFF67D2C) : Colors.grey[800],
                 ),
-              ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: active ? const Color(0xFFF67D2C) : Colors.grey[700],
+              ),
+            ],
           ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Aclonica',
-              fontSize: 13,
-              color: active ? const Color(0xFFF67D2C) : Colors.grey[800],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -387,7 +576,7 @@ class _PetCard extends ConsumerWidget {
   final dynamic pet; // PetModel
   final String imageName;
 
-  const _PetCard({required this.pet, required this.imageName});
+  const _PetCard({super.key, required this.pet, required this.imageName});
 
   String _petId() {
     return (pet.id ?? '').toString();
@@ -436,7 +625,10 @@ class _PetCard extends ConsumerWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    _ResolvedAssetImage(imageName: imageName),
+                    _ResolvedAssetImage(
+                      key: ValueKey('${_petId()}_$imageName'),
+                      imageName: imageName,
+                    ),
                     DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -628,7 +820,7 @@ class _CardMetaChip extends StatelessWidget {
 class _ResolvedAssetImage extends StatefulWidget {
   final String? imageName; // may be null
 
-  const _ResolvedAssetImage({this.imageName});
+  const _ResolvedAssetImage({super.key, this.imageName});
 
   @override
   State<_ResolvedAssetImage> createState() => _ResolvedAssetImageState();
@@ -641,6 +833,15 @@ class _ResolvedAssetImageState extends State<_ResolvedAssetImage> {
   void initState() {
     super.initState();
     _resolve();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ResolvedAssetImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if ((oldWidget.imageName ?? '').trim() != (widget.imageName ?? '').trim()) {
+      setState(() => _resolvedPath = null);
+      _resolve();
+    }
   }
 
   Future<void> _resolve() async {

@@ -51,7 +51,23 @@ class PetModel {
     String getString(dynamic value) {
       if (value == null) return '';
       if (value is String) return value;
+      if (value is List) {
+        if (value.isEmpty) return '';
+        // API can return media as an array; use the first valid entry.
+        return getString(value.first);
+      }
       if (value is Map) {
+        final mediaCandidate =
+            value['url'] ??
+            value['secure_url'] ??
+            value['mediaUrl'] ??
+            value['media'] ??
+            value['path'] ??
+            value['location'];
+        if (mediaCandidate != null) {
+          final parsedMedia = getString(mediaCandidate);
+          if (parsedMedia.isNotEmpty) return parsedMedia;
+        }
         return value['_id'] ?? value['id'] ?? value['name'] ?? '';
       }
       return value.toString();
@@ -71,17 +87,52 @@ class PetModel {
       return false;
     }
 
+    String firstNonEmpty(List<dynamic> values) {
+      for (final value in values) {
+        final parsed = getString(value).trim();
+        if (parsed.isNotEmpty) {
+          return parsed;
+        }
+      }
+      return '';
+    }
+
+    String getCategoryValue(Map<String, dynamic> source) {
+      final raw = source['category'];
+
+      if (raw is Map) {
+        final name = getString(raw['name']).trim();
+        if (name.isNotEmpty) return name;
+      }
+
+      final categoryFromRaw = getString(raw).trim();
+      if (categoryFromRaw.isNotEmpty) return categoryFromRaw;
+
+      // Fallback to species so category-based filters still work.
+      return getString(source['species']).trim();
+    }
+
     try {
       return PetModel(
         id: getString(json['_id'] ?? json['id']),
-        name: getString(json['itemName'] ?? json['name']),
+        name: firstNonEmpty([json['itemName'], json['name'], 'Unnamed Pet']),
         description: getString(json['description']),
-        type: getString(json['type']) == ''
+        type:
+            getString(
+                  json['type'] ?? json['status'] ?? json['adoptionStatus'],
+                ).trim() ==
+                ''
             ? 'available'
-            : getString(json['type']),
-        category: getString(json['category']),
+            : getString(
+                json['type'] ?? json['status'] ?? json['adoptionStatus'],
+              ),
+        category: getCategoryValue(json),
         location: getString(json['location']),
-        mediaUrl: getString(json['media'] ?? json['mediaUrl']),
+        mediaUrl: firstNonEmpty([
+          json['mediaUrl'],
+          json['media'],
+          json['photos'],
+        ]),
         mediaType: getString(json['mediaType']) == ''
             ? 'photo'
             : getString(json['mediaType']),
@@ -92,7 +143,9 @@ class PetModel {
         healthStatus: getString(json['healthStatus']) == ''
             ? 'healthy'
             : getString(json['healthStatus']),
-        isAdopted: getBool(json['isClaimed'] ?? json['isAdopted']),
+        isAdopted:
+            getBool(json['isClaimed'] ?? json['isAdopted']) ||
+            getString(json['adoptionStatus']).toLowerCase() == 'adopted',
         adoptedBy: getString(json['claimedBy'] ?? json['adoptedBy']),
         adoptedByName: json['claimedBy'] is Map
             ? getString(json['claimedBy']['name'])
@@ -139,7 +192,7 @@ class PetModel {
   }
 
   /// Get image URL with default profile icon
-  String get imageUrl => mediaUrl.isNotEmpty ? mediaUrl : 'profile.jpg';
+  String get imageUrl => mediaUrl.isNotEmpty ? mediaUrl : 'main_logo.png';
 
   /// Convert to Entity
   PetEntity toEntity() {
