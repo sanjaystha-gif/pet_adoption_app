@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pet_adoption_app/data/models/user_model.dart';
+import 'package:pet_adoption_app/presentation/providers/user_model.dart';
 
 void main() {
   group('UserModel copyWith edge cases', () {
